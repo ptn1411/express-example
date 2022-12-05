@@ -1,6 +1,6 @@
 {
-  "name": "apipassword",
-  "version": "1.0.0",
+  "name": "expressdemo",
+  "version": "0.0.1",
   "description": "",
   "main": "build/index.js",
   "scripts": {
