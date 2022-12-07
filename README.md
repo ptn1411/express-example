@@ -1,6 +1,6 @@
 "# express-example"
 
-file .env
+create .env
 
 ```sh
 PORT=
