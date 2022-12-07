@@ -15,4 +15,10 @@ router.get("/3005", (_req: Request, res: Response) => {
 router.get("/3006", (_req: Request, res: Response) => {
   res.send("Server 3006");
 });
+router.get("/3007", (_req: Request, res: Response) => {
+  res.send("Server 3005");
+});
+router.get("/3008", (_req: Request, res: Response) => {
+  res.send("Server 3006");
+});
 export default router;
