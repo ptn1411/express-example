@@ -1,9 +1,9 @@
 module.exports = {
   apps: [
     {
-      name: "expressdemo",
+      name: "ptn1411/express-example",
       script: "./build/index.js",
-      watch: true,
+      watch: false,
     },
   ],
 };
