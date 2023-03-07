@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "lib": ["es5", "es6"],
     "moduleResolution": "node",
-    "target": "es2016",
+    "target": "es6",
     "module": "commonjs",
     "outDir": "./build",
     "strict": true,
@@ -9,8 +10,11 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "cache", "data"]
+  "exclude": ["node_modules"]
 }

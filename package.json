@@ -3,27 +3,37 @@
   "version": "0.0.2",
   "description": "",
   "main": "build/index.js",
+  "type": "commonjs",
   "scripts": {
     "build": "npm run clean && tsc && npm run copy",
     "copy": "node actions/copy.js",
     "clean": "node actions/remove.js",
     "start": "node build/index.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q build/index.js\""
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q build/index.js\"",
+    "entity": "typeorm entity:create src/entity/ex"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@ptndev/json": "^1.0.5",
-    "@ptndev/orm": "^1.0.6",
     "@types/express-serve-static-core": "^4.17.31",
+    "apollo-server-core": "^3.12.0",
+    "apollo-server-express": "^3.12.0",
+    "argon2": "^0.30.3",
+    "class-validator": "^0.14.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "graphql": "15.3.0",
     "helmet": "^6.0.1",
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
-    "ormjson": "0.0.7"
+    "mysql2": "^3.2.0",
+    "ormjson": "0.0.7",
+    "reflect-metadata": "^0.1.13",
+    "type-graphql": "^1.1.1",
+    "typeorm": "^0.3.12"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
