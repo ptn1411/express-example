@@ -19,6 +19,7 @@ import { Context } from "./types/Context";
 import RedisStore from "connect-redis";
 import { createClient } from "redis";
 import { COOKIE_NAME, SESSION_MAX_AGE } from "./constants";
+import { PostResolver } from "./resolver/post";
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();
@@ -72,7 +73,7 @@ AppDataSource.initialize()
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
-        resolvers: [HelloResolver, UserResolver],
+        resolvers: [HelloResolver, UserResolver, PostResolver],
         validate: false,
       }),
       context: ({ req, res }): Context => ({ req, res }),

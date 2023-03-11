@@ -11,7 +11,7 @@ import { COOKIE_NAME } from "../constants";
 
 @Resolver()
 export class UserResolver {
-  @Mutation((_returns) => UserMutationResponse)
+  @Mutation((_return) => UserMutationResponse)
   async register(
     @Arg("registerInput") registerInput: RegisterInput,
     @Ctx() { req }: Context
@@ -126,7 +126,7 @@ export class UserResolver {
       };
     }
   }
-  @Mutation((_returns) => Boolean)
+  @Mutation((_return) => Boolean)
   async logout(@Ctx() { req, res }: Context): Promise<boolean> {
     return new Promise((resolve, _reject) => {
       res.clearCookie(COOKIE_NAME);
