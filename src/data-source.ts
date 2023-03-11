@@ -1,18 +1,18 @@
-import "reflect-metadata"
-import { DataSource } from "typeorm"
-import { User } from "./entity/User"
+import "reflect-metadata";
+import { DataSource } from "typeorm";
+import { User } from "./entity/User";
+import { Post } from "./entity/Post";
 
 export const AppDataSource = new DataSource({
-    type: "mysql",
-    host: "h21766.tino.org",
-    port: 3306,
-    username: "phamthan_apidev",
-    password: "]cu;X)BvTp5e",
-    database: "phamthan_apidev",
-    synchronize: true,
-    logging: false,
-    entities: [User],
-    migrations: [],
-    subscribers: [],
-    
-})
+  type: "mysql",
+  host: process.env.DB_HOST,
+  port: 3306,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  synchronize: true,
+  logging: false,
+  entities: [User, Post],
+  migrations: [],
+  subscribers: [],
+});

@@ -9,6 +9,8 @@
     "copy": "node actions/copy.js",
     "clean": "node actions/remove.js",
     "start": "node build/index.js",
+    "watch": "npx tsc --watch",
+    "nodemon": "nodemon -q build/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q build/index.js\"",
     "entity": "typeorm entity:create src/entity/ex"
   },
@@ -22,6 +24,7 @@
     "apollo-server-express": "^3.12.0",
     "argon2": "^0.30.3",
     "class-validator": "^0.14.0",
+    "connect-redis": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
@@ -32,6 +35,7 @@
     "morgan": "^1.10.0",
     "mysql2": "^3.2.0",
     "ormjson": "0.0.7",
+    "redis": "^4.6.5",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.1.1",
     "typeorm": "^0.3.12"
