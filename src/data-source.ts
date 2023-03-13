@@ -2,6 +2,8 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "./entity/User";
 import { Post } from "./entity/Post";
+import path from "path";
+import { __prod__ } from "./constants";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -11,8 +13,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   synchronize: true,
-  logging: false,
+  ...(__prod__ ? {} : { synchronize: true }),
   entities: [User, Post],
-  migrations: [],
-  subscribers: [],
+  migrations: [path.join(__dirname, "/migrations/*")],
 });

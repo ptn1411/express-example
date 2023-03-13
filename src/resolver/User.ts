@@ -25,8 +25,18 @@ export class UserResolver {
       };
     }
     try {
-      const { username, password, email, age, phone, firstName, lastName } =
-        registerInput;
+      const {
+        username,
+        password,
+        email,
+        birthday,
+        sex,
+        fullName,
+        phone,
+        firstName,
+        lastName,
+        avatar,
+      } = registerInput;
       const existingUser = await User.findOne({
         where: [{ username }, { email }],
       });
@@ -51,10 +61,13 @@ export class UserResolver {
         username,
         password: hashPassword,
         email,
-        age,
+        fullName,
         phone,
         firstName,
         lastName,
+        birthday,
+        sex,
+        avatar,
       });
       await User.save(newUser);
       req.session.userId = newUser.id;

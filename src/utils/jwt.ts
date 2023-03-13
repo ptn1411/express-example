@@ -1,14 +1,7 @@
 import jwt from "jsonwebtoken";
-
-export interface TypeUserToken {
-  name: string;
-  email: string;
-  user_id: number;
-  photo: string;
-  role: string[];
-}
-
-function JwtSignAccessToken(payload: { [key: string]: any }, exp: number) {
+import { DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
+import { Response } from "express";
+function JwtSignAccessToken(payload: string | Buffer | object, exp: number) {
   const secretAccess = process.env.ACCESS_TOKEN_PRIVATE_KEY;
 
   if (secretAccess !== undefined) {
@@ -33,7 +26,7 @@ function JwtVerifyAccessToken<T>(token: string) {
   }
 }
 
-function JwtSignRefreshToken(payload: { [key: string]: any }, exp: number) {
+function JwtSignRefreshToken(payload: string | Buffer | object, exp: number) {
   const secretRefresh = process.env.REFRESH_TOKEN_PRIVATE_KEY;
 
   if (secretRefresh !== undefined) {
@@ -44,9 +37,23 @@ function JwtSignRefreshToken(payload: { [key: string]: any }, exp: number) {
   return undefined;
 }
 
-function JwtGenerateTokens(payload: { [key: string]: any }) {
-  const accessToken = JwtSignAccessToken(payload, 86400);
-  const refreshToken = JwtSignRefreshToken(payload, 2592000);
+function JwtVerifyRefreshToken<T>(token: string) {
+  try {
+    const secretRefresh = process.env.REFRESH_TOKEN_PRIVATE_KEY;
+    if (secretRefresh) {
+      const decode = jwt.verify(token, secretRefresh);
+      return decode as T;
+    }
+    return undefined;
+  } catch (error) {
+    console.error(error);
+    return undefined;
+  }
+}
+
+function JwtGenerateTokens(payload: string | Buffer | object) {
+  const accessToken = JwtSignAccessToken(payload, DAY_TIME); //1 ngay
+  const refreshToken = JwtSignRefreshToken(payload, DAY_TIME * 30); //30 ngay
   if (accessToken && refreshToken) {
     return {
       refreshToken: refreshToken,
@@ -55,10 +62,24 @@ function JwtGenerateTokens(payload: { [key: string]: any }) {
   }
   return undefined;
 }
+function JwtSendRefreshToken(res: Response, payload: string | Buffer | object) {
+  res.cookie(
+    REFRESH_TOKEN_COOKIE_NAME,
+    JwtSignRefreshToken(payload, DAY_TIME * 30),
+    {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/refresh_token",
+    }
+  );
+}
 
 export {
   JwtSignAccessToken,
   JwtVerifyAccessToken,
   JwtSignRefreshToken,
+  JwtVerifyRefreshToken,
   JwtGenerateTokens,
+  JwtSendRefreshToken,
 };

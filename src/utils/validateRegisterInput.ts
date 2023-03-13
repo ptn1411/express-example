@@ -46,17 +46,7 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.age <= 10) {
-    return {
-      message: "sai age",
-      errors: [
-        {
-          field: "age",
-          message: "do dai cua age phai dai 9 ",
-        },
-      ],
-    };
-  }
+
   if (registerInput.lastName.length <= 2) {
     return {
       message: "sai lastName",

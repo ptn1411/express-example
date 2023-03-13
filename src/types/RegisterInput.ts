@@ -13,7 +13,7 @@ export class RegisterInput {
 
   @Field()
   phone!: string;
- 
+
   @Field()
   firstName!: string;
 
@@ -21,5 +21,14 @@ export class RegisterInput {
   lastName!: string;
 
   @Field()
-  age!: number;
+  fullName!: string;
+
+  @Field()
+  birthday!: string;
+
+  @Field()
+  sex!: boolean;
+
+  @Field()
+  avatar!: string;
 }

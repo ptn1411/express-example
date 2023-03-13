@@ -40,7 +40,19 @@ export class User extends BaseEntity {
 
   @Field()
   @Column()
-  age!: number;
+  fullName!: string;
+
+  @Field()
+  @Column()
+  birthday!: string;
+
+  @Field()
+  @Column()
+  sex!: boolean;
+
+  @Field()
+  @Column()
+  avatar!: string;
 
   @Field()
   @CreateDateColumn({

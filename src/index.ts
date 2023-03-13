@@ -6,19 +6,23 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 import router from "./routers/index";
 import { AppDataSource } from "./data-source";
 
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolver/hello";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import {
+  ApolloServerPluginLandingPageGraphQLPlayground,
+  ApolloServerPluginLandingPageDisabled,
+} from "apollo-server-core";
 import { UserResolver } from "./resolver/user";
 
 import { Context } from "./types/Context";
 import RedisStore from "connect-redis";
 import { createClient } from "redis";
-import { COOKIE_NAME, SESSION_MAX_AGE } from "./constants";
+import { COOKIE_NAME, SESSION_MAX_AGE, __prod__ } from "./constants";
 import { PostResolver } from "./resolver/post";
 AppDataSource.initialize()
   .then(async () => {
@@ -39,12 +43,13 @@ AppDataSource.initialize()
       prefix: `${COOKIE_NAME}:`,
       ttl: SESSION_MAX_AGE,
     });
+
     app.use(express.json({ limit: "50mb" }));
     app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
     app.use(
       cors({
-        origin: "*",
+        origin: ["http://localhost:3000", "http://localhost:8080"],
         methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
         credentials: true,
         optionsSuccessStatus: 200,
@@ -53,6 +58,7 @@ AppDataSource.initialize()
 
     app.use(morgan("dev"));
     app.set("trust proxy", 1);
+    app.use(cookieParser());
     app.use(
       session({
         name: COOKIE_NAME,
@@ -76,15 +82,19 @@ AppDataSource.initialize()
         resolvers: [HelloResolver, UserResolver, PostResolver],
         validate: false,
       }),
-      context: ({ req, res }): Context => ({ req, res }),
-      plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+      context: ({ req, res }): Pick<Context, 'req' | 'res'> => ({ req, res }),
+      plugins: [
+        __prod__
+          ? ApolloServerPluginLandingPageDisabled()
+          : ApolloServerPluginLandingPageGraphQLPlayground(),
+      ],
     });
     await apolloServer.start();
     apolloServer.applyMiddleware({
       app,
       cors: {
         credentials: true,
-        origin: "*",
+        origin: ["http://localhost:3000", "http://localhost:8080"],
       },
     });
     app.use(
