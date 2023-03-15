@@ -7,14 +7,15 @@ import { validateRegisterInput } from "../utils/validateRegisterInput";
 import { LoginInput } from "../types/LoginInput";
 import { validateEmail } from "../utils";
 import { Context } from "../types/Context";
-import { COOKIE_NAME } from "../constants";
-
+import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
+import { JwtSendRefreshToken, JwtSignAccessToken } from "../utils/jwt";
+import jsonP from "@ptndev/json";
 @Resolver()
 export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
   async register(
     @Arg("registerInput") registerInput: RegisterInput,
-    @Ctx() { req }: Context
+    @Ctx() { req, res }: Context
   ): Promise<UserMutationResponse> {
     const validateRegisterInputErrors = validateRegisterInput(registerInput);
     if (validateRegisterInputErrors !== null) {
@@ -71,11 +72,23 @@ export class UserResolver {
       });
       await User.save(newUser);
       req.session.userId = newUser.id;
+      const dataUser = jsonP.removeKeyObject(newUser, ["password"]);
+      
+      const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
+      if (!accessToken) {
+        return {
+          code: 500,
+          success: false,
+          message: `error token`,
+        };
+      }
+      JwtSendRefreshToken(res, { user: dataUser });
       return {
         code: 200,
         success: true,
         message: "User tao thanh cong ",
         user: newUser,
+        accessToken: accessToken,
       };
     } catch (error) {
       return {
@@ -88,7 +101,7 @@ export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
   async login(
     @Arg("loginInput") { usernameOrEmail, password }: LoginInput,
-    @Ctx() { req }: Context
+    @Ctx() { req, res }: Context
   ): Promise<UserMutationResponse> {
     try {
       const isEmail = validateEmail(usernameOrEmail);
@@ -125,13 +138,26 @@ export class UserResolver {
       }
 
       req.session.userId = existingUser.id;
+      const dataUser = jsonP.removeKeyObject(existingUser, ["password"]);
 
+      const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
+      if (!accessToken) {
+        return {
+          code: 500,
+          success: false,
+          message: `error token`,
+        };
+      }
+      JwtSendRefreshToken(res, { user: dataUser });
       return {
         code: 200,
         success: true,
         user: existingUser,
+        accessToken: accessToken,
       };
     } catch (error) {
+      console.log(error);
+
       return {
         code: 500,
         success: false,
@@ -143,6 +169,7 @@ export class UserResolver {
   async logout(@Ctx() { req, res }: Context): Promise<boolean> {
     return new Promise((resolve, _reject) => {
       res.clearCookie(COOKIE_NAME);
+      res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
       req.session.destroy((error) => {
         if (error) {
           resolve(false);
