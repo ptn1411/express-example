@@ -3,7 +3,6 @@ import {
   Column,
   BaseEntity,
   CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   PrimaryColumn,
 } from "typeorm";
@@ -12,17 +11,21 @@ import { User } from "./User";
 
 @ObjectType()
 @Entity()
-export class Post extends BaseEntity {
+export class Image extends BaseEntity {
   @Field()
   @PrimaryColumn()
   uuid!: string;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => User, (user) => user.images)
   user!: User;
 
   @Field()
   @Column()
-  content!: string;
+  alt!: string;
+
+  @Field()
+  @Column()
+  path!: string;
 
   @Field()
   @CreateDateColumn({
@@ -30,12 +33,4 @@ export class Post extends BaseEntity {
     default: () => "CURRENT_TIMESTAMP(6)",
   })
   createAt!: Date;
-
-  @Field()
-  @UpdateDateColumn({
-    type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP(6)",
-    onUpdate: "CURRENT_TIMESTAMP(6)",
-  })
-  updateAt!: Date;
 }

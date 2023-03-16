@@ -5,9 +5,11 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
-
+import { Post } from "./Post";
+import { Image } from "./Image";
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
@@ -53,6 +55,12 @@ export class User extends BaseEntity {
   @Field()
   @Column()
   avatar!: string;
+
+  @OneToMany(() => Post, (post) => post.user)
+  posts!: Post[];
+
+  @OneToMany(() => Image, (image) => image.user)
+  images!: Image[];
 
   @Field()
   @CreateDateColumn({

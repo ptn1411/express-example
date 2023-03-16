@@ -3,27 +3,53 @@ import {
   Mutation,
   Resolver,
   Query,
-  ID,
   UseMiddleware,
+  Ctx,
 } from "type-graphql";
 import { PostMutationResponse } from "../types/PostMutationResponse";
 import { CreatePostInput } from "../types/CreatePostInput";
 import { Post } from "../entity/Post";
 import { UpdatePostInput } from "../types/UpdatePostInput";
 import { checkAuth } from "../middleware/checkAuth";
-
+import { Context } from "../types/Context";
+import { AppDataSource } from "../data-source";
+import { v4 as uuidv4 } from "uuid";
+import { User } from "../entity/User";
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
+  @UseMiddleware(checkAuth)
   async createPost(
-    @Arg("createPostInput") { title, text }: CreatePostInput
+    @Arg("createPostInput") { content }: CreatePostInput,
+    @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
+      const uuid = uuidv4();
       const newPost = await Post.create({
-        title,
-        text,
+        content,
+        uuid,
       });
-      await Post.save(newPost);
+
+      if (!req.session.userId) {
+        return {
+          code: 401,
+          success: false,
+          message: `error`,
+        };
+      }
+      const user = await User.findOneBy({
+        id: req.session.userId,
+      });
+      if (!user) {
+        return {
+          code: 401,
+          success: false,
+          message: `error`,
+        };
+      }
+      newPost.user = user;
+      await AppDataSource.manager.save(newPost);
+
       return {
         code: 200,
         success: true,
@@ -38,30 +64,61 @@ export class PostResolver {
       };
     }
   }
+
   @Query((_return) => [Post], { nullable: true })
-  async posts(): Promise<Post[] | null> {
+  @UseMiddleware(checkAuth)
+  async posts(@Ctx() { req }: Context): Promise<Post[] | null> {
     try {
-      return await Post.find();
+      if (!req.session.userId) {
+        return null;
+      }
+      const id = req.session.userId;
+      // const postRepository = await AppDataSource.getRepository(Post);
+      // const posts = await postRepository
+      //   .createQueryBuilder("post")
+      //   .where("post.userId = :id", { id: id })
+      //   .getMany();
+      const posts = await AppDataSource.createQueryBuilder()
+        .relation(User, "posts")
+        .of(id)
+        .loadMany();
+      return posts;
     } catch (error) {
       return null;
     }
   }
   @Query((_return) => Post, { nullable: true })
-  async post(@Arg("id", (_type) => ID) id: number): Promise<Post | null> {
+  @UseMiddleware(checkAuth)
+  async post(
+    @Arg("uuid") uuid: string,
+    @Ctx() { req }: Context
+  ): Promise<Post | null> {
     try {
-      return await Post.findOneBy({ id });
+      if (!req.session.userId) {
+        return null;
+      }
+      const id = req.session.userId;
+      const postRepository = await AppDataSource.getRepository(Post);
+      const post = await postRepository
+        .createQueryBuilder("post")
+        .where("post.userId = :id", { id: id })
+        .where("post.uuid = :uuid", { uuid: uuid })
+        .getOne();
+      return post;
     } catch (error) {
       return null;
     }
   }
+
   @Mutation((_return) => PostMutationResponse)
+  @UseMiddleware(checkAuth)
   async updatePost(
-    @Arg("updatePostInput") { id, title, text }: UpdatePostInput
+    @Arg("updatePostInput") { uuid, content }: UpdatePostInput
   ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
         where: {
-          id,
+          uuid,
         },
       });
       if (!existingPost) {
@@ -71,8 +128,8 @@ export class PostResolver {
           message: ` not ok`,
         };
       }
-      existingPost.title = title;
-      existingPost.text = text;
+      existingPost.content = content;
+
       await existingPost.save();
       return {
         code: 200,
@@ -90,13 +147,11 @@ export class PostResolver {
   }
   @Mutation((_return) => PostMutationResponse)
   @UseMiddleware(checkAuth)
-  async deletePost(
-    @Arg("id", (_type) => ID) id: number
-  ): Promise<PostMutationResponse> {
+  async deletePost(@Arg("uuid") uuid: string): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
         where: {
-          id,
+          uuid,
         },
       });
       if (!existingPost) {
@@ -106,7 +161,7 @@ export class PostResolver {
           message: `khong co data`,
         };
       }
-      await Post.delete({ id });
+      await Post.delete({ uuid });
       return {
         code: 200,
         success: true,

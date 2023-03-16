@@ -1,13 +1,10 @@
-import { Field, ID, InputType } from "type-graphql";
+import { Field, InputType } from "type-graphql";
 
 @InputType()
 export class UpdatePostInput {
-  @Field((_type) => ID)
-  id!: number;
+  @Field()
+  uuid!: string;
 
   @Field()
-  title!: string;
-
-  @Field()
-  text!: string;
+  content!: string;
 }
