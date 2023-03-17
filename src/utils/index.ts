@@ -61,7 +61,20 @@ function compareArrayToArray(array1: string[], array2: string[]) {
   }
   return undefined;
 }
+function dateNow() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  let mm: any = today.getMonth() + 1; // Months start at 0!
+  let dd: any = today.getDate();
 
+  if (dd < 10) dd = "0" + dd;
+  if (mm < 10) mm = "0" + mm;
+
+  const date = dd + "/" + mm + "/" + yyyy;
+  const dateNoTiles = `${dd}${mm}${yyyy}`;
+  const yearNoTiles = `${yyyy}${mm}${dd}`;
+  return { date, dateNoTiles, yearNoTiles, dd, mm, yyyy };
+}
 export {
   validateEmail,
   validatePassword,
@@ -72,4 +85,5 @@ export {
   removeOptionalKeys,
   isEmptyObject,
   compareArrayToArray,
+  dateNow,
 };

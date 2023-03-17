@@ -25,6 +25,18 @@ export class Post extends BaseEntity {
   content!: string;
 
   @Field()
+  @Column()
+  likes!: number;
+
+  @Field()
+  @Column()
+  shares!: number;
+
+  @Field((_type) => [String])
+  @Column({ type: "simple-array", nullable: true })
+  images!: string[];
+
+  @Field()
   @CreateDateColumn({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP(6)",
