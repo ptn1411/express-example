@@ -7,4 +7,7 @@ export class UpdatePostInput {
 
   @Field()
   content!: string;
+
+  @Field((_type) => [String], { nullable: true })
+  images!: string[];
 }

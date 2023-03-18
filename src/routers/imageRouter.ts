@@ -6,7 +6,11 @@ import { Request, Response, NextFunction } from "express-serve-static-core";
 import { dateNow } from "../utils";
 import { mkdirp } from "mkdirp";
 import path from "path";
-
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import { Image } from "../entity/Image";
+import { v4 as uuidv4 } from "uuid";
+import { User } from "../entity/User";
+import { AppDataSource } from "../data-source";
 const multerStorage = multer.memoryStorage();
 
 const router = Router();
@@ -85,7 +89,19 @@ const resizeImages = async (
         .toFormat("png")
         .jpeg({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);
-      req.body.images.push(newFilename);
+      const uuid = uuidv4();
+      const newImage = await Image.create({
+        uuid: uuid,
+        path: `${pathYearMonth}/${newFilename}`,
+      });
+      const user = await User.findOneBy({
+        id: req.user?.id,
+      });
+      if (user) {
+        newImage.user = user;
+        await AppDataSource.manager.save(newImage);
+        req.body.images.push(newFilename);
+      }
     })
   );
   return next();
@@ -93,12 +109,13 @@ const resizeImages = async (
 const getResult = async (req: Request, res: Response) => {
   if (req.body.images.length <= 0) {
     return res.json({
-      status: "error",
+      status: false,
+      code: 400,
       message: "You must select at least 1 image.",
     });
   }
   const images: string[] = req.body.images.map(
-    (image: string) => `${process.env.URL_APP}/image/${image}`
+    (image: string) => `${process.env.URL_APP}/image/n/${image}`
   );
 
   return res.json({
@@ -107,10 +124,22 @@ const getResult = async (req: Request, res: Response) => {
     images: images,
   });
 };
-router.post("/", uploadImages, resizeImages, getResult);
-router.get("/:uuid", (req: Request, res: Response) => {
+router.post(
+  "/",
+  checkApiAuthAccessToken,
+  uploadImages,
+  resizeImages,
+  getResult
+);
+router.get("/n/:uuid", (req: Request, res: Response) => {
   const uuid = req.params.uuid;
-
+  if (!uuid) {
+    return res.json({
+      status: false,
+      code: 404,
+      message: "not image",
+    });
+  }
   const pathYearMonth = `../../uploads/images/${uuid.slice(0, 4)}/${uuid.slice(
     4,
     6
@@ -125,6 +154,39 @@ router.get("/:uuid", (req: Request, res: Response) => {
     },
   };
 
-  res.sendFile(uuid, options);
+  return res.sendFile(uuid, options);
+});
+router.get("/u/:uuid", async (req: Request, res: Response) => {
+  const uuid = req.params.uuid;
+  if (!uuid) {
+    return res.json({
+      status: false,
+      code: 404,
+      message: "not image",
+    });
+  }
+  const existingImage = await Image.findOneBy({
+    uuid: uuid,
+  });
+
+  if (!existingImage) {
+    return res.json({
+      status: false,
+      code: 404,
+      message: "not image",
+    });
+  }
+  const fileName = existingImage?.path.slice(22) as string;
+  const options = {
+    root: path.join(__dirname, `../../${existingImage?.path.slice(0, 22)}`),
+    dotfiles: "deny",
+    headers: {
+      "x-timestamp": Date.now(),
+      "x-sent": true,
+      "x-alt": existingImage.alt,
+    },
+  };
+
+  return res.sendFile(fileName, options);
 });
 export default router;

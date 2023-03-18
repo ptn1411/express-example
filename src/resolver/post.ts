@@ -20,13 +20,14 @@ export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
   @UseMiddleware(checkAuth)
   async createPost(
-    @Arg("createPostInput") { content }: CreatePostInput,
+    @Arg("createPostInput") { content, images }: CreatePostInput,
     @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
       const uuid = uuidv4();
       const newPost = await Post.create({
         content,
+        images,
         uuid,
       });
 
@@ -113,7 +114,7 @@ export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
   @UseMiddleware(checkAuth)
   async updatePost(
-    @Arg("updatePostInput") { uuid, content }: UpdatePostInput
+    @Arg("updatePostInput") { uuid, content, images }: UpdatePostInput
   ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
@@ -129,6 +130,7 @@ export class PostResolver {
         };
       }
       existingPost.content = content;
+      existingPost.images = images;
 
       await existingPost.save();
       return {

@@ -6,7 +6,7 @@ import { User } from "../entity/User";
 export type Context = {
   req: Request & {
     session: Session & Partial<SessionData>;
+    user?: Partial<User>;
   };
   res: Response;
-  user: Partial<User>;
 };

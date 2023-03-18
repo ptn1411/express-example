@@ -24,6 +24,7 @@ import RedisStore from "connect-redis";
 import { createClient } from "redis";
 import { COOKIE_NAME, SESSION_MAX_AGE, __prod__ } from "./constants";
 import { PostResolver } from "./resolver/post";
+import { ImageResolver } from "./resolver/image";
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();
@@ -79,7 +80,7 @@ AppDataSource.initialize()
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
-        resolvers: [HelloResolver, UserResolver, PostResolver],
+        resolvers: [HelloResolver, UserResolver, PostResolver,ImageResolver],
         validate: false,
       }),
       context: ({ req, res }): Pick<Context, 'req' | 'res'> => ({ req, res }),

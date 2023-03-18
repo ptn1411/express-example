@@ -4,4 +4,7 @@ import { Field, InputType } from "type-graphql";
 export class CreatePostInput {
   @Field()
   content!: string;
+
+  @Field((_type) => [String], { nullable: true })
+  images!: string[];
 }
