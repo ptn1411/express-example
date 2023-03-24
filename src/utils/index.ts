@@ -61,6 +61,7 @@ function compareArrayToArray(array1: string[], array2: string[]) {
   }
   return undefined;
 }
+
 function dateNow() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -75,8 +76,40 @@ function dateNow() {
   const yearNoTiles = `${yyyy}${mm}${dd}`;
   return { date, dateNoTiles, yearNoTiles, dd, mm, yyyy };
 }
+
+function hideEmailElement(email: string) {
+  const emailMatch = email.split("@");
+  const data: string[] = [];
+  const nameEmail = emailMatch[0] as string;
+  data.push(nameEmail.slice(0, 2));
+  for (let i = 0; i < nameEmail.length; i++) {
+    if (i >= 2) {
+      data.push("*");
+    }
+  }
+
+  return {
+    domain: emailMatch[1],
+    name: nameEmail,
+    emailHide: `${data.join("")}@${emailMatch[1]}`,
+  };
+}
+function hidePhoneElement(phone: string) {
+  const data: string[] = [];
+
+  for (let i = 0; i < phone.slice(0, -2).length; i++) {
+    data.push("*");
+  }
+  data.push(phone.slice(-2));
+  return {
+    phone: phone,
+    phoneHide: data.join(""),
+  };
+}
 export {
   validateEmail,
+  hideEmailElement,
+  hidePhoneElement,
   validatePassword,
   removeKeyObject,
   isNullOrUndefined,

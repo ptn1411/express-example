@@ -38,7 +38,7 @@ export class ImageResolver {
     images.map((image: Image) => {
       data.push({
         link: `${process.env.URL_APP}/image/u/${image.uuid}`,
-        alt: "",
+        alt: date,
       });
     });
     return {

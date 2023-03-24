@@ -5,6 +5,8 @@ import { Post } from "./entity/Post";
 import { Image } from "./entity/Image";
 // import path from "path";
 import { __prod__ } from "./constants";
+import { Like } from "./entity/Like";
+import { Comment } from "./entity/Comment";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -16,6 +18,6 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: true,
   ...(__prod__ ? {} : { synchronize: true }),
-  entities: [User, Post, Image],
+  entities: [User, Post, Image, Like, Comment],
   // migrations: [path.join(__dirname, "/migrations/*")],
 });

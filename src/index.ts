@@ -22,9 +22,11 @@ import { UserResolver } from "./resolver/user";
 import { Context } from "./types/Context";
 import RedisStore from "connect-redis";
 import { createClient } from "redis";
-import { COOKIE_NAME, SESSION_MAX_AGE, __prod__ } from "./constants";
+import { COOKIE_NAME, ORIGIN, SESSION_MAX_AGE, __prod__ } from "./constants";
 import { PostResolver } from "./resolver/post";
 import { ImageResolver } from "./resolver/image";
+import { LikeResolver } from "./resolver/like";
+import { CommentResolver } from "./resolver/comment";
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();
@@ -50,7 +52,7 @@ AppDataSource.initialize()
 
     app.use(
       cors({
-        origin: ["http://localhost:3000", "http://localhost:8080"],
+        origin: ORIGIN,
         methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
         credentials: true,
         optionsSuccessStatus: 200,
@@ -80,10 +82,17 @@ AppDataSource.initialize()
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
-        resolvers: [HelloResolver, UserResolver, PostResolver,ImageResolver],
+        resolvers: [
+          HelloResolver,
+          UserResolver,
+          PostResolver,
+          ImageResolver,
+          LikeResolver,
+          CommentResolver,
+        ],
         validate: false,
       }),
-      context: ({ req, res }): Pick<Context, 'req' | 'res'> => ({ req, res }),
+      context: ({ req, res }): Pick<Context, "req" | "res"> => ({ req, res }),
       plugins: [
         __prod__
           ? ApolloServerPluginLandingPageDisabled()
@@ -95,7 +104,7 @@ AppDataSource.initialize()
       app,
       cors: {
         credentials: true,
-        origin: ["http://localhost:3000", "http://localhost:8080"],
+        origin: ORIGIN,
       },
     });
     app.use(

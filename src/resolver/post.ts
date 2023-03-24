@@ -15,6 +15,8 @@ import { Context } from "../types/Context";
 import { AppDataSource } from "../data-source";
 import { v4 as uuidv4 } from "uuid";
 import { User } from "../entity/User";
+
+import { PostQueryResponse } from "../types/PostQueryResponse";
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
@@ -65,49 +67,121 @@ export class PostResolver {
       };
     }
   }
-
-  @Query((_return) => [Post], { nullable: true })
-  @UseMiddleware(checkAuth)
-  async posts(@Ctx() { req }: Context): Promise<Post[] | null> {
+  @Query((_return) => PostQueryResponse, { nullable: true })
+  async posts(): Promise<PostQueryResponse> {
     try {
-      if (!req.session.userId) {
-        return null;
+      const postRepository = await AppDataSource.getRepository(Post);
+      const posts = await postRepository
+        .createQueryBuilder("post")
+        .leftJoinAndSelect("post.user", "user")
+        .leftJoinAndSelect("post.likes", "like")
+        .leftJoinAndSelect("post.comments", "comment")
+        .getMany();
+
+      if (!posts) {
+        return {
+          code: 404,
+          success: false,
+          message: `error`,
+        };
       }
-      const id = req.session.userId;
-      // const postRepository = await AppDataSource.getRepository(Post);
-      // const posts = await postRepository
-      //   .createQueryBuilder("post")
-      //   .where("post.userId = :id", { id: id })
-      //   .getMany();
-      const posts = await AppDataSource.createQueryBuilder()
-        .relation(User, "posts")
-        .of(id)
-        .loadMany();
-      return posts;
+      console.log(posts);
+
+      return {
+        code: 200,
+        success: true,
+        posts: posts,
+      };
     } catch (error) {
-      return null;
+      console.log(error);
+
+      return {
+        code: 500,
+        success: false,
+        message: `error`,
+      };
     }
   }
-  @Query((_return) => Post, { nullable: true })
+  @Query((_return) => PostQueryResponse, { nullable: true })
   @UseMiddleware(checkAuth)
-  async post(
-    @Arg("uuid") uuid: string,
-    @Ctx() { req }: Context
-  ): Promise<Post | null> {
+  async getPostsUserByUserName(
+    @Arg("username") username: string
+  ): Promise<PostQueryResponse> {
     try {
-      if (!req.session.userId) {
-        return null;
+      const user = await User.findOneBy({
+        username: username,
+      });
+      if (!user) {
+        return {
+          code: 404,
+          success: false,
+          message: `error`,
+        };
       }
-      const id = req.session.userId;
+
+      const id = user.id;
+      const postRepository = await AppDataSource.getRepository(Post);
+      const posts = await postRepository
+        .createQueryBuilder("post")
+        .leftJoinAndSelect("post.user", "user")
+        .leftJoinAndSelect("post.likes", "like")
+        .leftJoinAndSelect("post.comments", "comment")
+        .where("post.userId = :id", { id: id })
+        .getMany();
+
+      if (!posts) {
+        return {
+          code: 404,
+          success: false,
+          message: `error`,
+        };
+      }
+      return {
+        code: 200,
+        success: true,
+        posts: posts,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `error`,
+      };
+    }
+  }
+  @Query((_return) => PostQueryResponse, { nullable: true })
+  @UseMiddleware(checkAuth)
+  async post(@Arg("uuid") uuid: string): Promise<PostQueryResponse> {
+    try {
       const postRepository = await AppDataSource.getRepository(Post);
       const post = await postRepository
         .createQueryBuilder("post")
-        .where("post.userId = :id", { id: id })
+        .leftJoinAndSelect("post.user", "user")
+        .leftJoinAndSelect("post.likes", "like")
+        .leftJoinAndSelect("post.comments", "comment")
         .where("post.uuid = :uuid", { uuid: uuid })
+
         .getOne();
-      return post;
+      if (!post) {
+        return {
+          code: 404,
+          success: false,
+          message: `error`,
+        };
+      }
+      console.log(post);
+
+      return {
+        code: 200,
+        success: true,
+        post: post,
+      };
     } catch (error) {
-      return null;
+      return {
+        code: 500,
+        success: false,
+        message: `error`,
+      };
     }
   }
 

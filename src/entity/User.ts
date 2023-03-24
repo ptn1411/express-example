@@ -10,6 +10,8 @@ import {
 import { ObjectType, Field, ID } from "type-graphql";
 import { Post } from "./Post";
 import { Image } from "./Image";
+import { Like } from "./Like";
+import { Comment } from "./Comment";
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
@@ -61,6 +63,12 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Image, (image) => image.user)
   images!: Image[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes!: Like[];
+
+  @OneToMany(() => Comment, (comment) => comment.user)
+  comments!: Comment[];
 
   @Field()
   @CreateDateColumn({

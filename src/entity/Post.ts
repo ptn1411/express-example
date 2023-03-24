@@ -6,9 +6,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   PrimaryColumn,
+  OneToMany,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
+import { Like } from "./Like";
+import { Comment } from "./Comment";
 
 @ObjectType()
 @Entity()
@@ -20,21 +23,23 @@ export class Post extends BaseEntity {
   @ManyToOne(() => User, (user) => user.posts)
   user!: User;
 
+  @OneToMany(() => Like, (like) => like.post)
+  likes!: Like[];
+
+  @OneToMany(() => Comment, (comment) => comment.post)
+  comments!: Comment[];
+
   @Field()
   @Column()
   content!: string;
 
   @Field()
   @Column()
-  likes!: number;
-
-  @Field()
-  @Column()
   shares!: number;
 
   @Field((_type) => [String])
-  @Column({ type: "simple-array", nullable: true })
-  images!: string[];
+  @Column({ type: "simple-array" })
+  images?: string[];
 
   @Field()
   @CreateDateColumn({

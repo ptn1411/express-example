@@ -13,13 +13,13 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.username.length <= 4) {
+  if (registerInput.username.length <= 5) {
     return {
       message: "sai username",
       errors: [
         {
           field: "username",
-          message: "do dai cua username phai dai 4 ",
+          message: "do dai cua username phai dai 5 ",
         },
       ],
     };

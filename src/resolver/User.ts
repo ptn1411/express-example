@@ -1,15 +1,24 @@
-import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import { User } from "../entity/User";
 import argon2 from "argon2";
 import { UserMutationResponse } from "../types/UserMutationResponse";
 import { RegisterInput } from "../types/RegisterInput";
 import { validateRegisterInput } from "../utils/validateRegisterInput";
 import { LoginInput } from "../types/LoginInput";
-import { validateEmail } from "../utils";
+import { hideEmailElement, hidePhoneElement, validateEmail } from "../utils";
 import { Context } from "../types/Context";
 import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
 import { JwtSendRefreshToken, JwtSignAccessToken } from "../utils/jwt";
 import jsonP from "@ptndev/json";
+import { checkAuth } from "../middleware/checkAuth";
+
 @Resolver()
 export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
@@ -73,7 +82,7 @@ export class UserResolver {
       await User.save(newUser);
       req.session.userId = newUser.id;
       const dataUser = jsonP.removeKeyObject(newUser, ["password"]);
-      
+
       const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
       if (!accessToken) {
         return {
@@ -177,5 +186,73 @@ export class UserResolver {
         resolve(true);
       });
     });
+  }
+  @UseMiddleware(checkAuth)
+  @Query((_return) => UserMutationResponse)
+  async user(@Ctx() { req }: Context): Promise<UserMutationResponse> {
+    try {
+      const id = req.session.userId;
+
+      const existingUser = await User.findOneBy({
+        id,
+      });
+      if (!existingUser) {
+        return {
+          code: 404,
+          success: false,
+        };
+      }
+      existingUser.email = hideEmailElement(existingUser.email).emailHide;
+      existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
+      console.log(existingUser);
+
+      return {
+        code: 200,
+        success: true,
+        user: existingUser,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server ${error}`,
+      };
+    }
+  }
+  @UseMiddleware(checkAuth)
+  @Query((_return) => UserMutationResponse)
+  async getUser(
+    @Arg("username") username: string
+  ): Promise<UserMutationResponse> {
+    try {
+      const existingUser = await User.findOneBy({
+        username,
+      });
+      if (!existingUser) {
+        return {
+          code: 404,
+          success: false,
+        };
+      }
+      existingUser.id = 0;
+      existingUser.email = "";
+      existingUser.phone = "";
+      existingUser.birthday = "";
+      existingUser.sex = false;
+      existingUser.createAt = new Date();
+      existingUser.updateAt = new Date();
+
+      return {
+        code: 200,
+        success: true,
+        user: existingUser,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server ${error}`,
+      };
+    }
   }
 }
