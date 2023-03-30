@@ -5,7 +5,7 @@ export const __prod__ = process.env.NODE_ENV === "production";
 export const REFRESH_TOKEN_COOKIE_NAME = process.env
   .REFRESH_TOKEN_COOKIE_NAME as string;
 
-export const REACTIONS_TYPE = ["like", "love", "smile"];
+export const REACTIONS_TYPE = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
 export const ORIGIN = [
   "http://localhost:3000",

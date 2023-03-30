@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "../entity/User";
 
 import { PostQueryResponse } from "../types/PostQueryResponse";
+
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
@@ -26,6 +27,13 @@ export class PostResolver {
     @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
+      if (content.length === 0) {
+        return {
+          code: 404,
+          success: false,
+          message: `khong co noi dung`,
+        };
+      }
       const uuid = uuidv4();
       const newPost = await Post.create({
         content,
@@ -67,16 +75,33 @@ export class PostResolver {
       };
     }
   }
-  @Query((_return) => PostQueryResponse, { nullable: true })
+  @Query((_return) => PostQueryResponse)
   async posts(): Promise<PostQueryResponse> {
     try {
       const postRepository = await AppDataSource.getRepository(Post);
-      const posts = await postRepository
-        .createQueryBuilder("post")
-        .leftJoinAndSelect("post.user", "user")
-        .leftJoinAndSelect("post.likes", "like")
-        .leftJoinAndSelect("post.comments", "comment")
-        .getMany();
+      const posts = await postRepository.find({
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+        order: {
+          createAt: "DESC",
+        },
+      });
+      // .createQueryBuilder("post")
+
+      // .leftJoinAndSelect("post.user", "user")
+
+      // .leftJoinAndSelect("post.likes", "like")
+
+      // .leftJoinAndSelect("post.comments", "comment")
+
+      // .getMany();
 
       if (!posts) {
         return {
@@ -84,8 +109,8 @@ export class PostResolver {
           success: false,
           message: `error`,
         };
+        0;
       }
-      console.log(posts);
 
       return {
         code: 200,
@@ -237,7 +262,7 @@ export class PostResolver {
           message: `khong co data`,
         };
       }
-      await Post.delete({ uuid });
+
       return {
         code: 200,
         success: true,

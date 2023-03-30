@@ -35,7 +35,9 @@ export class Comment extends BaseEntity {
   comments?: Comment[];
 
   @Field()
-  @Column()
+  @Column({
+    type: "text",
+  })
   content!: string;
 
   @Field()

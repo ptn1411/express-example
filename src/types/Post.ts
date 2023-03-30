@@ -1,6 +1,6 @@
 import { Field, ObjectType } from "type-graphql";
-import { Like } from "../entity/Like";
-import { Comment } from "../entity/Comment";
+import { ILike } from "./Like";
+import { IComment } from "./Comment";
 import { IUser } from "./User";
 
 @ObjectType()
@@ -26,9 +26,9 @@ export class IPost {
   @Field()
   user!: IUser;
 
-  @Field((_type) => [Like], { nullable: true })
-  likes!: Like[];
+  @Field((_type) => [ILike], { nullable: true })
+  likes!: ILike[];
 
-  @Field((_type) => [Comment], { nullable: true })
-  comments!: Comment[];
+  @Field((_type) => [IComment], { nullable: true })
+  comments!: IComment[];
 }

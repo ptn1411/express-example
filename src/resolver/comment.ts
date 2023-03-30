@@ -28,7 +28,7 @@ export class CommentResolver {
           message: `sai react`,
         };
       }
-
+      
       const user = await User.findOneBy({
         id: id,
       });
@@ -58,10 +58,27 @@ export class CommentResolver {
       existingComment.user = user;
       existingComment.post = post;
       await AppDataSource.manager.save(existingComment);
+      const postComments = await AppDataSource.getRepository(Comment).find({
+        where: {
+          post: {
+            uuid: post.uuid,
+          },
+        },
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+      });
       return {
         code: 200,
         success: true,
         comment: existingComment,
+        comments: postComments,
       };
     } catch (error) {
       console.log(error);

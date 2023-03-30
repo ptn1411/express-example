@@ -12,6 +12,7 @@ import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
+import { Bookmark } from "./Bookmark";
 
 @ObjectType()
 @Entity()
@@ -23,6 +24,9 @@ export class Post extends BaseEntity {
   @ManyToOne(() => User, (user) => user.posts)
   user!: User;
 
+  @OneToMany(() => Bookmark, (bookmark) => bookmark.post)
+  bookmarks!: Bookmark[];
+
   @OneToMany(() => Like, (like) => like.post)
   likes!: Like[];
 
@@ -30,7 +34,9 @@ export class Post extends BaseEntity {
   comments!: Comment[];
 
   @Field()
-  @Column()
+  @Column({
+    type: "text",
+  })
   content!: string;
 
   @Field()

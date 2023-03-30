@@ -18,6 +18,7 @@ import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
 import { JwtSendRefreshToken, JwtSignAccessToken } from "../utils/jwt";
 import jsonP from "@ptndev/json";
 import { checkAuth } from "../middleware/checkAuth";
+import { UserQueryResponse } from "../types/UserQueryResponse";
 
 @Resolver()
 export class UserResolver {
@@ -147,6 +148,8 @@ export class UserResolver {
       }
 
       req.session.userId = existingUser.id;
+      existingUser.email = hideEmailElement(existingUser.email).emailHide;
+      existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
       const dataUser = jsonP.removeKeyObject(existingUser, ["password"]);
 
       const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
@@ -204,7 +207,6 @@ export class UserResolver {
       }
       existingUser.email = hideEmailElement(existingUser.email).emailHide;
       existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
-      console.log(existingUser);
 
       return {
         code: 200,
@@ -246,6 +248,37 @@ export class UserResolver {
         code: 200,
         success: true,
         user: existingUser,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server ${error}`,
+      };
+    }
+  }
+  @UseMiddleware(checkAuth)
+  @Query((_return) => UserQueryResponse)
+  async getUsers(): Promise<UserQueryResponse> {
+    try {
+      const existingUsers = await User.find({
+        select: {
+          username: true,
+          fullName: true,
+          avatar: true,
+        },
+      });
+      if (!existingUsers) {
+        return {
+          code: 404,
+          success: false,
+        };
+      }
+
+      return {
+        code: 200,
+        success: true,
+        users: existingUsers,
       };
     } catch (error) {
       return {
