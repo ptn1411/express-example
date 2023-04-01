@@ -47,9 +47,10 @@ export class UserResolver {
         firstName,
         lastName,
         avatar,
+        coverImage,
       } = registerInput;
       const existingUser = await User.findOne({
-        where: [{ username }, { email }],
+        where: [{ username }, { email }, { phone }],
       });
 
       if (existingUser) {
@@ -79,6 +80,7 @@ export class UserResolver {
         birthday,
         sex,
         avatar,
+        coverImage,
       });
       await User.save(newUser);
       req.session.userId = newUser.id;
@@ -236,7 +238,7 @@ export class UserResolver {
           success: false,
         };
       }
-      existingUser.id = 0;
+
       existingUser.email = "";
       existingUser.phone = "";
       existingUser.birthday = "";
@@ -261,13 +263,7 @@ export class UserResolver {
   @Query((_return) => UserQueryResponse)
   async getUsers(): Promise<UserQueryResponse> {
     try {
-      const existingUsers = await User.find({
-        select: {
-          username: true,
-          fullName: true,
-          avatar: true,
-        },
-      });
+      const existingUsers = await User.find();
       if (!existingUsers) {
         return {
           code: 404,

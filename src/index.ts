@@ -28,6 +28,7 @@ import { ImageResolver } from "./resolver/image";
 import { LikeResolver } from "./resolver/like";
 import { CommentResolver } from "./resolver/comment";
 import { BookmarkResolver } from "./resolver/bookmark";
+
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();

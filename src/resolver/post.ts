@@ -144,16 +144,26 @@ export class PostResolver {
         };
       }
 
-      const id = user.id;
       const postRepository = await AppDataSource.getRepository(Post);
-      const posts = await postRepository
-        .createQueryBuilder("post")
-        .leftJoinAndSelect("post.user", "user")
-        .leftJoinAndSelect("post.likes", "like")
-        .leftJoinAndSelect("post.comments", "comment")
-        .where("post.userId = :id", { id: id })
-        .getMany();
-
+      const posts = await postRepository.find({
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+        order: {
+          createAt: "DESC",
+        },
+        where: {
+          user: {
+            id: user.id,
+          },
+        },
+      });
       if (!posts) {
         return {
           code: 404,

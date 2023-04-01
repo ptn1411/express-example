@@ -31,4 +31,7 @@ export class RegisterInput {
 
   @Field()
   avatar!: string;
+
+  @Field()
+  coverImage!: string;
 }

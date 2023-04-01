@@ -49,9 +49,10 @@ export const checkApiAuthAccessToken = (
         message: "error",
       });
     }
+    
     const decodedUser = JwtVerifyAccessToken<User>(accessToken as string);
-    if (!decodedUser) {
-      res.json({
+    if (decodedUser === undefined) {
+      return res.json({
         code: 401,
         success: false,
         message: "error",

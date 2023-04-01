@@ -1,26 +1,30 @@
 import {
   Entity,
   BaseEntity,
+  Column,
   CreateDateColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
-import { User } from "./User";
-import { Post } from "./Post";
 
 @ObjectType()
 @Entity()
-export class Bookmark extends BaseEntity {
+export class Friends extends BaseEntity {
   @Field((_type) => ID)
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.bookmarks, { onDelete: "CASCADE" })
-  user!: User;
+  @Field()
+  @Column()
+  userId!: string;
 
-  @ManyToOne(() => Post, (post) => post.bookmarks, { onDelete: "CASCADE" })
-  post!: Post;
+  @Field()
+  @Column()
+  friendId!: string;
+
+  @Field()
+  @Column()
+  status!: boolean;
 
   @Field()
   @CreateDateColumn({

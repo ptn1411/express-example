@@ -19,16 +19,18 @@ export class Comment extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.comments)
+  @ManyToOne(() => User, (user) => user.comments, { onDelete: "CASCADE" })
   user!: User;
 
-  @ManyToOne(() => Post, (post) => post.comments)
+  @ManyToOne(() => Post, (post) => post.comments, { onDelete: "CASCADE" })
   post?: Post;
 
-  @OneToMany(() => Like, (like) => like.comment)
+  @OneToMany(() => Like, (like) => like.comment, { onDelete: "CASCADE" })
   likes!: Like[];
 
-  @ManyToOne(() => Comment, (comment) => comment.comments)
+  @ManyToOne(() => Comment, (comment) => comment.comments, {
+    onDelete: "CASCADE",
+  })
   comment?: Comment;
 
   @OneToMany(() => Comment, (comment) => comment.comment)

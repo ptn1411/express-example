@@ -92,6 +92,14 @@ export class BookmarkResolver {
   async bookmarkAll(@Ctx() { req }: Context): Promise<BookmarkResponse> {
     try {
       const id = req.session.userId;
+
+      if (!id) {
+        return {
+          code: 401,
+          success: false,
+          message: `error`,
+        };
+      }
       const user = await User.findOneBy({
         id: id,
       });

@@ -21,7 +21,7 @@ export class Post extends BaseEntity {
   @PrimaryColumn()
   uuid!: string;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => User, (user) => user.posts, { onDelete: "CASCADE" })
   user!: User;
 
   @OneToMany(() => Bookmark, (bookmark) => bookmark.post)

@@ -7,18 +7,19 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from "typeorm";
-import { ObjectType, Field, ID } from "type-graphql";
+import { ObjectType, Field } from "type-graphql";
 import { Post } from "./Post";
 import { Image } from "./Image";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
 import { Bookmark } from "./Bookmark";
+
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
-  @Field((_type) => ID)
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @Field()
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
   @Field()
   @Column({ unique: true })
@@ -58,6 +59,10 @@ export class User extends BaseEntity {
   @Field()
   @Column()
   avatar!: string;
+
+  @Field()
+  @Column()
+  coverImage!: string;
 
   @OneToMany(() => Post, (post) => post.user)
   posts!: Post[];

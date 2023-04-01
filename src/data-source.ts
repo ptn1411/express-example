@@ -8,6 +8,7 @@ import { __prod__ } from "./constants";
 import { Like } from "./entity/Like";
 import { Comment } from "./entity/Comment";
 import { Bookmark } from "./entity/Bookmark";
+import { Friends } from "./entity/Friends";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -19,6 +20,6 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: true,
   ...(__prod__ ? {} : { synchronize: true }),
-  entities: [User, Post, Image, Like, Comment, Bookmark],
+  entities: [User, Post, Image, Like, Comment, Bookmark, Friends],
   // migrations: [path.join(__dirname, "/migrations/*")],
 });
