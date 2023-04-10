@@ -12,3 +12,8 @@ export const ORIGIN = [
   "http://localhost:3001",
   "http://localhost:8080",
 ];
+export enum Role {
+  USER = 'user',
+  PREMIUM = 'premium',
+  ADMIN = 'admin',
+}

@@ -2,10 +2,13 @@ import {
   Entity,
   BaseEntity,
   Column,
+  ManyToOne,
   CreateDateColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
+import { User } from "./User";
+import { FriendRequest_Status } from "../types/Friends";
 
 @ObjectType()
 @Entity()
@@ -14,17 +17,15 @@ export class Friends extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Field()
-  @Column()
-  userId!: string;
+  @ManyToOne(() => User, (userEntity) => userEntity.sentFriendRequests)
+  creator!: User;
+
+  @ManyToOne(() => User, (userEntity) => userEntity.receivedFriendRequests)
+  receiver!: User;
 
   @Field()
   @Column()
-  friendId!: string;
-
-  @Field()
-  @Column()
-  status!: boolean;
+  status!: FriendRequest_Status;
 
   @Field()
   @CreateDateColumn({

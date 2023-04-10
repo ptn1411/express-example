@@ -129,6 +129,7 @@ export class BookmarkResolver {
             id: user.id,
           },
         },
+     
       });
       if (!bookmarks) {
         return {

@@ -6,6 +6,7 @@ import {
 } from "../utils/jwt";
 import { User } from "../entity/User";
 import { DAY_TIME } from "../constants";
+import { JwtPayload } from "../middleware/checkAuth";
 
 const router = Router();
 
@@ -15,11 +16,11 @@ router.get("/", async (req: Request, res: Response) => {
   if (!refreshToken) return res.sendStatus(401);
 
   try {
-    const decodeUser = JwtVerifyRefreshToken<User>(refreshToken);
+    const decodeUser = JwtVerifyRefreshToken(refreshToken) as JwtPayload;
     if (!decodeUser) return res.sendStatus(401);
     const existingUser = await User.findOne({
       where: {
-        id: decodeUser.id,
+        id: decodeUser.user.id,
       },
     });
     if (!existingUser) return res.sendStatus(401);

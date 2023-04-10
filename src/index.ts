@@ -29,6 +29,8 @@ import { LikeResolver } from "./resolver/like";
 import { CommentResolver } from "./resolver/comment";
 import { BookmarkResolver } from "./resolver/bookmark";
 
+import { FriendsResolver } from "./resolver/friends";
+
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();
@@ -92,6 +94,7 @@ AppDataSource.initialize()
           LikeResolver,
           CommentResolver,
           BookmarkResolver,
+          FriendsResolver,
         ],
         validate: false,
       }),

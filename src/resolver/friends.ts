@@ -1,4 +1,4 @@
-import { Arg, Ctx, Query, Resolver } from "type-graphql";
+import { Ctx, Query, Resolver } from "type-graphql";
 
 import { Context } from "../types/Context";
 
@@ -6,60 +6,56 @@ import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { Friends } from "../entity/Friends";
 import { FriendQueryResponse } from "../types/FriendQueryResponse";
+import { log } from "console";
 
 @Resolver()
 export class FriendsResolver {
   @Query((_return) => FriendQueryResponse)
-  async createFriends(
-    @Arg("friendId") friendId: string,
-    @Arg("status") status: boolean,
-    @Ctx() { req }: Context
-  ): Promise<FriendQueryResponse> {
-    const id = req.session.userId;
-    const user = await User.findOneBy({
-      id: id,
-    });
-    if (!user) {
-      return {
-        code: 401,
-        success: false,
-        message: `error`,
-      };
-    }
-    const checkFriend = await User.findOneBy({
-      id: friendId,
-    });
-    if (!checkFriend) {
-      return {
-        code: 404,
-        success: false,
-        message: `error`,
-      };
-    }
-    const existingFriends = await Friends.findOne({
-      where: [{ userId: user.id, friendId: checkFriend.id }],
-    });
-    if (existingFriends) {
-      existingFriends.status = status;
-      await AppDataSource.manager.save(existingFriends);
+  async friends(@Ctx() { req }: Context): Promise<FriendQueryResponse> {
+    try {
+      const uuid = req.session.userId;
+      const existingFriends = await AppDataSource.getRepository(Friends).find({
+        where: [
+          {
+            creator: {
+              id: uuid,
+            },
+            status: "accepted",
+          },
+          {
+            receiver: {
+              id: uuid,
+            },
+            status: "accepted",
+          },
+        ],
+        relations: ["creator", "receiver"],
+      });
+      let userUuid: string[] = [];
+      existingFriends.forEach((friend) => {
+        if (friend.creator.id === uuid) {
+          userUuid.push(friend.receiver.id);
+        } else if (friend.receiver.id === uuid) {
+          userUuid.push(friend.creator.id);
+        }
+      });
+      const existingUsers = await AppDataSource.getRepository(User).findByIds(
+        userUuid
+      );
       return {
         code: 200,
         success: true,
         message: `success`,
-        friends: [existingFriends],
+        friends: existingFriends,
+        users: existingUsers,
+      };
+    } catch (error) {
+      log(error);
+      return {
+        code: 500,
+        success: false,
+        message: `error`,
       };
     }
-    const newFriends = await Friends.create({
-      userId: user.id,
-      friendId: checkFriend.id,
-      status: false,
-    });
-    await AppDataSource.manager.save(newFriends);
-    return {
-      code: 200,
-      success: true,
-      message: `success`,
-      friends: [newFriends],
-    };
   }
 }

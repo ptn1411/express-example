@@ -18,7 +18,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   synchronize: true,
-  logging: true,
+  logging: false,
   ...(__prod__ ? {} : { synchronize: true }),
   entities: [User, Post, Image, Like, Comment, Bookmark, Friends],
   // migrations: [path.join(__dirname, "/migrations/*")],

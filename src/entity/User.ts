@@ -13,6 +13,8 @@ import { Image } from "./Image";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
 import { Bookmark } from "./Bookmark";
+import { Friends } from "./Friends";
+import { Role } from "../constants";
 
 @ObjectType()
 @Entity()
@@ -78,6 +80,22 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments!: Comment[];
+
+  @OneToMany(
+    () => Friends,
+    (friendRequestEntity) => friendRequestEntity.creator
+  )
+  sentFriendRequests!: Friends[];
+
+  @OneToMany(
+    () => Friends,
+    (friendRequestEntity) => friendRequestEntity.receiver
+  )
+  receivedFriendRequests!: Friends[];
+
+  @Field()
+  @Column({ type: "enum", enum: Role, default: Role.USER })
+  role!: Role;
 
   @Field()
   @CreateDateColumn({

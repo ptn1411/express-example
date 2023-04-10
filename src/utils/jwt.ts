@@ -12,12 +12,12 @@ function JwtSignAccessToken(payload: string | Buffer | object, exp: number) {
   return undefined;
 }
 
-function JwtVerifyAccessToken<T>(token: string) {
+function JwtVerifyAccessToken(token: string) {
   try {
     const secretAccess = process.env.ACCESS_TOKEN_PRIVATE_KEY;
     if (secretAccess) {
       const decode = jwt.verify(token, secretAccess);
-      return decode as T;
+      return decode
     }
     return undefined;
   } catch (error) {
@@ -37,12 +37,12 @@ function JwtSignRefreshToken(payload: string | Buffer | object, exp: number) {
   return undefined;
 }
 
-function JwtVerifyRefreshToken<T>(token: string) {
+function JwtVerifyRefreshToken(token: string) {
   try {
     const secretRefresh = process.env.REFRESH_TOKEN_PRIVATE_KEY;
     if (secretRefresh) {
       const decode = jwt.verify(token, secretRefresh);
-      return decode as T;
+      return decode 
     }
     return undefined;
   } catch (error) {
