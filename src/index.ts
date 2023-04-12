@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import dotenv from "dotenv";
 dotenv.config();
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -30,10 +30,15 @@ import { CommentResolver } from "./resolver/comment";
 import { BookmarkResolver } from "./resolver/bookmark";
 
 import { FriendsResolver } from "./resolver/friends";
+import http from "http";
+import { Server as SocketIO } from "socket.io";
+
+import socket from "./routers/socket";
 
 AppDataSource.initialize()
   .then(async () => {
     const app: Express = express();
+    const server = new http.Server(app);
     const port = process.env.PORT;
     let redisClient = createClient({
       socket: {
@@ -66,23 +71,21 @@ AppDataSource.initialize()
     app.use(morgan("dev"));
     app.set("trust proxy", 1);
     app.use(cookieParser());
-    app.use(
-      session({
-        name: COOKIE_NAME,
-        store: redisStore,
-        secret: process.env.SECRET_SESSION_KEY as string,
-        cookie: {
-          maxAge: SESSION_MAX_AGE,
-          httpOnly: true,
-          secure: false,
-          sameSite: "lax",
-          domain: "localhost",
-          path: "/",
-        },
-        resave: false,
-        saveUninitialized: false,
-      })
-    );
+    const sessionMiddleware = session({
+      name: COOKIE_NAME,
+      store: redisStore,
+      secret: process.env.SECRET_SESSION_KEY as string,
+      cookie: {
+        maxAge: SESSION_MAX_AGE,
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      },
+      resave: true,
+      saveUninitialized: true,
+    });
+    app.use(sessionMiddleware);
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
@@ -119,13 +122,22 @@ AppDataSource.initialize()
 
     app.use("/", router);
 
-    app.get("*", function (_req: Request, res: Response) {
-      return res.json({
-        code: 404,
-      });
+    const io = new SocketIO(server, {
+      cors: {
+        origin: "http://localhost:3000",
+        credentials: true,
+      },
     });
 
-    app.listen(port, () => {
+    io.engine.use(helmet());
+    io.use((socket, next) => {
+      let req = socket.request as express.Request;
+      let res = {} as express.Response;
+      sessionMiddleware(req, res, next as express.NextFunction);
+    });
+    socket(io);
+
+    server.listen(port, () => {
       console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
     });
   })

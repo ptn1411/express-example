@@ -9,6 +9,9 @@ import { Like } from "./entity/Like";
 import { Comment } from "./entity/Comment";
 import { Bookmark } from "./entity/Bookmark";
 import { Friends } from "./entity/Friends";
+import { ActiveConversationEntity } from "./entity/Active-conversation";
+import { ConversationEntity } from "./entity/Conversation";
+import { MessageEntity } from "./entity/Message";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -20,6 +23,17 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: false,
   ...(__prod__ ? {} : { synchronize: true }),
-  entities: [User, Post, Image, Like, Comment, Bookmark, Friends],
+  entities: [
+    User,
+    Post,
+    Image,
+    Like,
+    Comment,
+    Bookmark,
+    Friends,
+    ActiveConversationEntity,
+    ConversationEntity,
+    MessageEntity,
+  ],
   // migrations: [path.join(__dirname, "/migrations/*")],
 });

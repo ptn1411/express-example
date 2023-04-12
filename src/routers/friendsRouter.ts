@@ -6,7 +6,18 @@ import { AppDataSource } from "../data-source";
 import { FriendRequest_Status } from "../types/Friends";
 import jsonP from "@ptndev/json";
 const router = Router();
-
+const arrayKeyRemove = [
+  "password",
+  "email",
+  "phone",
+  "firstName",
+  "lastName",
+  "birthday",
+  "sex",
+  "coverImage",
+  "createAt",
+  "updateAt",
+];
 router.get(
   "/status/:receiverId",
   checkApiAuthAccessToken,
@@ -36,27 +47,39 @@ router.get(
         relations: ["creator", "receiver"],
       });
       if (!existingFriends) {
-        return res.send({
+        return res.json({
           code: 200,
           success: true,
           status: "not-sent",
         });
       }
-      if (existingFriends.receiver.id === uuid) {
-        return res.send({
+      if (
+        existingFriends.receiver.id === uuid &&
+        ["not-sent", "pending", "waiting-for-current-user-response"].includes(
+          existingFriends.status
+        )
+      ) {
+        return res.json({
           code: 200,
           success: true,
+          id: existingFriends.id,
           status: "waiting-for-current-user-response",
         });
       }
       existingFriends.status = existingFriends?.status || "not-sent";
-      return res.send({
+      return res.json({
         code: 200,
         success: true,
-        ...existingFriends,
+        id: existingFriends.id,
+        creator: jsonP.removeKeyObject(existingFriends.creator, arrayKeyRemove),
+        receiver: jsonP.removeKeyObject(
+          existingFriends.receiver,
+          arrayKeyRemove
+        ),
+        status: existingFriends.status,
       });
     } catch (error) {
-      return res.send({
+      return res.json({
         code: 500,
         success: false,
         message: `error`,
@@ -142,30 +165,9 @@ router.post(
         code: 200,
         success: true,
         message: `success`,
-        creator: jsonP.removeKeyObject(friendRequest.creator, [
-          "password",
-          "email",
-          "phone",
-          "firstName",
-          "lastName",
-          "birthday",
-          "sex",
-          "coverImage",
-          "createAt",
-          "updateAt",
-        ]),
-        receiver: jsonP.removeKeyObject(friendRequest.receiver, [
-          "password",
-          "email",
-          "phone",
-          "firstName",
-          "lastName",
-          "birthday",
-          "sex",
-          "coverImage",
-          "createAt",
-          "updateAt",
-        ]),
+        id: friendRequest.id,
+        creator: jsonP.removeKeyObject(friendRequest.creator, arrayKeyRemove),
+        receiver: jsonP.removeKeyObject(friendRequest.receiver, arrayKeyRemove),
         status: friendRequest.status,
       });
     } catch (error) {
@@ -182,12 +184,12 @@ router.put(
   "/response/:friendRequestId",
   checkApiAuthAccessToken,
   async (
-    req: TypedRequest<{ statusResponse: FriendRequest_Status }>,
+    req: TypedRequest<{ status: FriendRequest_Status }>,
     res: Response
   ) => {
     const { friendRequestId } = req.params;
 
-    const status = req.body.statusResponse;
+    const status = req.body.status;
     try {
       const existingFriends = await Friends.findOneBy({
         id: parseInt(friendRequestId),
@@ -207,8 +209,17 @@ router.put(
         success: true,
         message: `success`,
         ...existingFriends,
+        // id: existingFriends.id,
+        // creator: jsonP.removeKeyObject(existingFriends.creator, arrayKeyRemove),
+        // receiver: jsonP.removeKeyObject(
+        //   existingFriends.receiver,
+        //   arrayKeyRemove
+        // ),
+        // status: existingFriends.status,
       });
     } catch (error) {
+      console.log(error);
+
       return res.send({
         code: 500,
         success: false,
@@ -303,12 +314,20 @@ router.get(
       const existingUsers = await AppDataSource.getRepository(User).findByIds(
         userUuid
       );
+      const userData: any[] = [];
+      existingUsers.forEach((user) => {
+        userData.push({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          avatar: user.avatar,
+        });
+      });
       return res.json({
         code: 200,
         success: true,
         message: `success`,
-        friend: existingFriends,
-        user: existingUsers,
+        friends: userData,
       });
     } catch (error) {
       return res.send({

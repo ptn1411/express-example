@@ -15,6 +15,7 @@ import { Comment } from "./Comment";
 import { Bookmark } from "./Bookmark";
 import { Friends } from "./Friends";
 import { Role } from "../constants";
+import { MessageEntity } from "./Message";
 
 @ObjectType()
 @Entity()
@@ -96,6 +97,9 @@ export class User extends BaseEntity {
   @Field()
   @Column({ type: "enum", enum: Role, default: Role.USER })
   role!: Role;
+
+  @OneToMany(() => MessageEntity, (messageEntity) => messageEntity.user)
+  messages!: MessageEntity[];
 
   @Field()
   @CreateDateColumn({

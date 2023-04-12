@@ -22,7 +22,22 @@ export const checkAuth: MiddlewareFn<Context> = (
   }
   return next();
 };
+export const checkAuthApi = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log(req.session.userId);
 
+  if (!req.session.userId) {
+    return res.json({
+      code: 401,
+      success: false,
+      message: "Not authenticated to perform GraphQL operations",
+    });
+  }
+  return next();
+};
 export const checkAccessToken: MiddlewareFn<Context> = ({ context }, next) => {
   const authHeader = context.req.header("Authorization");
   const accessToken = authHeader && authHeader.split(" ")[1];
@@ -66,7 +81,6 @@ export const checkApiAuthAccessToken = (
         message: "error",
       });
     }
-    console.log("decodedUser", decodedUser.user);
 
     req.user = decodedUser.user;
     return next();
