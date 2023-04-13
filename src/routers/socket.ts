@@ -30,13 +30,15 @@ export default function (io: Socket | any) {
 
       if (newMessage.conversation.id) {
         const message = await chat.createMessage(newMessage);
-        newMessage.id = message.id;
-        const activeConversations = await chat.getActiveUsers(
-          newMessage.conversation.id
-        );
-        activeConversations.forEach((activeConversation) => {
-          io.to(activeConversation.socketId).emit("newMessage", newMessage);
-        });
+
+        if (message) {
+          const activeConversations = await chat.getActiveUsers(
+            message.conversation.id
+          );
+          activeConversations.forEach((activeConversation) => {
+            io.to(activeConversation.socketId).emit("newMessage", message);
+          });
+        }
       }
       return null;
     });
@@ -46,6 +48,7 @@ export default function (io: Socket | any) {
         uuid,
         socket.id
       );
+
       if (activeConversation) {
         const messages = await chat.getMessages(
           activeConversation.conversationId

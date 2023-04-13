@@ -107,24 +107,40 @@ export let joinConversation = async (
     ActiveConversationEntity
   ).findOne({
     where: {
-      userId,
+      user: {
+        id: userId,
+      },
     },
   });
+  const existingUser = await User.findOneBy({
+    id: userId,
+  });
+  if (!existingUser) {
+    return null;
+  }
   if (activeConversation) {
     await AppDataSource.getRepository(ActiveConversationEntity).delete({
-      userId,
+      user: {
+        id: userId,
+      },
     });
-    return await AppDataSource.getRepository(ActiveConversationEntity).save({
-      userId,
+    const newActiveConversationEntity = await ActiveConversationEntity.create({
+      user: existingUser,
       socketId,
       conversationId,
     });
+    return await AppDataSource.getRepository(ActiveConversationEntity).save(
+      newActiveConversationEntity
+    );
   } else {
-    return await AppDataSource.getRepository(ActiveConversationEntity).save({
-      userId,
+    const newActiveConversationEntity = await ActiveConversationEntity.create({
+      user: existingUser,
       socketId,
       conversationId,
     });
+    return await AppDataSource.getRepository(ActiveConversationEntity).save(
+      newActiveConversationEntity
+    );
   }
 };
 export let leaveConversation = async (socketId: string) => {
@@ -133,21 +149,75 @@ export let leaveConversation = async (socketId: string) => {
   });
 };
 export let getActiveUsers = async (conversationId: number) => {
-  return await AppDataSource.getRepository(ActiveConversationEntity).find({
+  const activeConversation = await AppDataSource.getRepository(
+    ActiveConversationEntity
+  ).find({
     where: {
       conversationId,
     },
+    relations: {
+      user: true,
+    },
+    select: {
+      user: {
+        id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
   });
+  return activeConversation;
 };
 export let createMessage = async (message: MessageEntity) => {
-  return await AppDataSource.getRepository(MessageEntity).save(message);
+  const existingUser = await User.findOne({
+    where: {
+      id: message.user.id,
+    },
+    select: {
+      id: true,
+      username: true,
+      avatar: true,
+      fullName: true,
+    },
+  });
+  if (!existingUser) {
+    return null;
+  }
+  message.user = existingUser;
+  const existingMessage = await MessageEntity.create({
+    ...message,
+  });
+  return await AppDataSource.getRepository(MessageEntity).save(existingMessage);
 };
 export let getMessages = async (conversationId: number) => {
-  return await AppDataSource.getRepository(MessageEntity)
-    .createQueryBuilder("message")
-    .where("message.conversation.id =:conversationId", { conversationId })
-    .orderBy("message.createdAt", "ASC")
-    .getMany();
+  return await AppDataSource.getRepository(MessageEntity).find({
+    where: {
+      conversation: {
+        id: conversationId,
+      },
+    },
+    relations: {
+      user: true,
+    },
+    order: {
+      createdAt: "ASC",
+    },
+    select: {
+      user: {
+        id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
+  });
+  // .createQueryBuilder("message")
+  // .leftJoinAndSelect("message.user", "user")
+  // .where("message.conversation.id =:conversationId", { conversationId })
+  // .orderBy("message.createdAt", "ASC")
+
+  // .getMany();
 };
 export let removeActiveConversations = async () => {
   return await AppDataSource.getRepository(ActiveConversationEntity)

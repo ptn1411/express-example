@@ -18,6 +18,7 @@ router.get(
       .where("user.fullName LIKE :keyword", { keyword: `%${keyword}%` })
       .orWhere("user.username LIKE :keyword", { keyword: `%${keyword}%` })
       .select(["user.id", "user.username", "user.fullName", "user.avatar"])
+      .limit(10)
       .getMany();
     // .find({
     //   where: {
