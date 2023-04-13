@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "../entity/User";
 
 import { PostQueryResponse } from "../types/PostQueryResponse";
+import { getPostsFromFriend } from "../services/post";
 
 @Resolver()
 export class PostResolver {
@@ -76,23 +77,23 @@ export class PostResolver {
     }
   }
   @Query((_return) => PostQueryResponse)
-  async posts(): Promise<PostQueryResponse> {
+  async posts(@Ctx() { req }: Context): Promise<PostQueryResponse> {
     try {
-      const postRepository = await AppDataSource.getRepository(Post);
-      const posts = await postRepository.find({
-        relations: {
-          user: true,
-          likes: {
-            user: true,
-          },
-          comments: {
-            user: true,
-          },
-        },
-        order: {
-          createAt: "DESC",
-        },
-      });
+      // const postRepository = await AppDataSource.getRepository(Post);
+      // const posts = await postRepository.find({
+      //   relations: {
+      //     user: true,
+      //     likes: {
+      //       user: true,
+      //     },
+      //     comments: {
+      //       user: true,
+      //     },
+      //   },
+      //   order: {
+      //     createAt: "DESC",
+      //   },
+      // });
       // .createQueryBuilder("post")
 
       // .leftJoinAndSelect("post.user", "user")
@@ -102,7 +103,7 @@ export class PostResolver {
       // .leftJoinAndSelect("post.comments", "comment")
 
       // .getMany();
-
+      const posts = await getPostsFromFriend(req.session.userId);
       if (!posts) {
         return {
           code: 404,

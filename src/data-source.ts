@@ -12,6 +12,8 @@ import { Friends } from "./entity/Friends";
 import { ActiveConversationEntity } from "./entity/Active-conversation";
 import { ConversationEntity } from "./entity/Conversation";
 import { MessageEntity } from "./entity/Message";
+import { UserOnline } from "./entity/User-online";
+import { Device } from "./entity/Device";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -34,6 +36,8 @@ export const AppDataSource = new DataSource({
     ActiveConversationEntity,
     ConversationEntity,
     MessageEntity,
+    UserOnline,
+    Device,
   ],
   // migrations: [path.join(__dirname, "/migrations/*")],
 });

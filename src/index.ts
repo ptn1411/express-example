@@ -42,7 +42,7 @@ AppDataSource.initialize()
     const port = process.env.PORT;
     let redisClient = createClient({
       socket: {
-        host: "vps.phamthanhnam.com",
+        host: process.env.REDIS_HOST,
         port: 6379,
       },
       password: process.env.REDIS_PASSWORD,
@@ -82,8 +82,8 @@ AppDataSource.initialize()
         sameSite: "lax",
         path: "/",
       },
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
     });
     app.use(sessionMiddleware);
 

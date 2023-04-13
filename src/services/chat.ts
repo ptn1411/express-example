@@ -3,7 +3,19 @@ import { ActiveConversationEntity } from "../entity/Active-conversation";
 import { ConversationEntity } from "../entity/Conversation";
 import { MessageEntity } from "../entity/Message";
 import { User } from "../entity/User";
-
+import { removeKeyObject } from "../utils";
+const arrayKeyRemove = [
+  "password",
+  "email",
+  "phone",
+  "firstName",
+  "lastName",
+  "birthday",
+  "sex",
+  "coverImage",
+  "createAt",
+  "updateAt",
+];
 export let getConversation = async (creatorId: string, friendId: string) => {
   const existingConversation = await AppDataSource.getRepository(
     ConversationEntity
@@ -15,8 +27,20 @@ export let getConversation = async (creatorId: string, friendId: string) => {
     .groupBy("conversation.id")
     .having("COUNT(*) > 1")
     .getOne();
-
-  return existingConversation;
+  const existingUser = await User.findOneBy({
+    id: creatorId,
+  });
+  const checkFriend = await User.findOneBy({
+    id: friendId,
+  });
+  if (existingUser && checkFriend && existingConversation) {
+    existingConversation.users = [
+      removeKeyObject(existingUser, arrayKeyRemove) as User,
+      removeKeyObject(checkFriend, arrayKeyRemove) as User,
+    ];
+    return existingConversation;
+  }
+  return null;
 };
 
 export let createConversation = async (creatorId: string, friendId: string) => {
@@ -38,6 +62,7 @@ export let createConversation = async (creatorId: string, friendId: string) => {
     const newConversation = await ConversationEntity.create({
       users: [existingUser, checkFriend],
     });
+
     await AppDataSource.getRepository(ConversationEntity).save(newConversation);
     return newConversation;
   }

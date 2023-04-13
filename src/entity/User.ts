@@ -16,6 +16,7 @@ import { Bookmark } from "./Bookmark";
 import { Friends } from "./Friends";
 import { Role } from "../constants";
 import { MessageEntity } from "./Message";
+import { Device } from "./Device";
 
 @ObjectType()
 @Entity()
@@ -72,6 +73,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Image, (image) => image.user)
   images!: Image[];
+
+  @OneToMany(() => Device, (device) => device.user)
+  devices!: Device[];
 
   @OneToMany(() => Like, (like) => like.user)
   likes!: Like[];
