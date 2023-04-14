@@ -7,13 +7,11 @@ export const REFRESH_TOKEN_COOKIE_NAME = process.env
 
 export const REACTIONS_TYPE = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
-export const ORIGIN = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:8080",
-];
+export const ORIGIN = __prod__
+  ? ["http://phamthanhnam.com", "https://phamthanhnam.com", "phamthanhnam.com"]
+  : ["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"];
 export enum Role {
-  USER = 'user',
-  PREMIUM = 'premium',
-  ADMIN = 'admin',
+  USER = "user",
+  PREMIUM = "premium",
+  ADMIN = "admin",
 }

@@ -2,7 +2,7 @@ import webPush from "web-push";
 import { Device } from "../entity/Device";
 
 webPush.setVapidDetails(
-  process.env.URL_APP as string,
+  "mailto: ptndev18@gmail.com",
   process.env.WEB_PUSH_PUBLIC_KEY as string,
   process.env.WEB_PUSH_PRIVATE_KEY as string
 );

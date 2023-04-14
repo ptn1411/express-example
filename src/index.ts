@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import dotenv from "dotenv";
-dotenv.config({ path: `../.env.${process.env.NODE_ENV}` })
+dotenv.config();
 import express, { Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -124,7 +124,7 @@ AppDataSource.initialize()
 
     const io = new SocketIO(server, {
       cors: {
-        origin: "http://localhost:3000",
+        origin: ORIGIN,
         credentials: true,
       },
     });

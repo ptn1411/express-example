@@ -16,5 +16,3 @@ fs.writeFileSync(
     dependencies: dependencies,
   })
 );
-
-shell.cp("-R", [".env.production"], "build/.env.production");
