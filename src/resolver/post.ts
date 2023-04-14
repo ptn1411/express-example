@@ -103,15 +103,14 @@ export class PostResolver {
       // .leftJoinAndSelect("post.comments", "comment")
 
       // .getMany();
-      const posts = await getPostsFromFriend(req.session.userId);
-      if (!posts) {
+      if (!req.session.userId) {
         return {
-          code: 404,
+          code: 401,
           success: false,
           message: `error`,
         };
-        0;
       }
+      const posts = await getPostsFromFriend(req.session.userId);
 
       return {
         code: 200,

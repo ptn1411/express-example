@@ -17,5 +17,4 @@ fs.writeFileSync(
   })
 );
 
-shell.cp("-R", [".env"], "build/.env");
-shell.cp("-R", ["data"], "build/data");
+shell.cp("-R", [".env.production"], "build/.env.production");

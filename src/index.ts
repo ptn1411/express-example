@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path: `../.env.${process.env.NODE_ENV}` })
 import express, { Express } from "express";
 import cors from "cors";
 import helmet from "helmet";

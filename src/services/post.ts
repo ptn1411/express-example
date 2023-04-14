@@ -19,11 +19,12 @@ export let getPostsFromFriend = async (userId: string) => {
       createAt: "DESC",
     },
   });
-  const postsData = posts.map((post) => {
+
+  const postsData: any = [];
+  posts.forEach((post) => {
     if (friendsId.includes(post.user.id)) {
-      return post;
+      postsData.push(post);
     }
-    return null;
   });
   return postsData;
 };
