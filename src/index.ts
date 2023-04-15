@@ -5,8 +5,9 @@ import express, { Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import session from "express-session";
+
 import cookieParser from "cookie-parser";
+import compression from "compression";
 import router from "./routers/index";
 import { AppDataSource } from "./data-source";
 
@@ -20,9 +21,9 @@ import {
 import { UserResolver } from "./resolver/user";
 
 import { Context } from "./types/Context";
-import RedisStore from "connect-redis";
+
 import { createClient } from "redis";
-import { COOKIE_NAME, ORIGIN, SESSION_MAX_AGE, __prod__ } from "./constants";
+import { ORIGIN, __prod__ } from "./constants";
 import { PostResolver } from "./resolver/post";
 import { ImageResolver } from "./resolver/image";
 import { LikeResolver } from "./resolver/like";
@@ -34,6 +35,9 @@ import http from "http";
 import { Server as SocketIO } from "socket.io";
 
 import socket from "./routers/socket";
+import { ParamsDictionary } from "express-serve-static-core";
+import { ParsedQs } from "qs";
+import { socketMiddleware } from "./middleware/checkAuth";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -48,13 +52,6 @@ AppDataSource.initialize()
       password: process.env.REDIS_PASSWORD,
     });
     redisClient.connect().catch(console.error);
-
-    // Initialize store.
-    let redisStore = new RedisStore({
-      client: redisClient,
-      prefix: `${COOKIE_NAME}:`,
-      ttl: SESSION_MAX_AGE,
-    });
 
     app.use(express.json({ limit: "50mb" }));
     app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -71,21 +68,6 @@ AppDataSource.initialize()
     app.use(morgan("dev"));
     app.set("trust proxy", 1);
     app.use(cookieParser());
-    const sessionMiddleware = session({
-      name: COOKIE_NAME,
-      store: redisStore,
-      secret: process.env.SECRET_SESSION_KEY as string,
-      cookie: {
-        maxAge: SESSION_MAX_AGE,
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      },
-      resave: false,
-      saveUninitialized: false,
-    });
-    app.use(sessionMiddleware);
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
@@ -119,7 +101,31 @@ AppDataSource.initialize()
     app.use(
       helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false })
     );
+    app.use(
+      compression({
+        level: 6,
+        threshold: 100 * 1000,
+        filter: shouldCompress,
+      })
+    );
 
+    function shouldCompress(
+      req: express.Request<
+        ParamsDictionary,
+        any,
+        any,
+        ParsedQs,
+        Record<string, any>
+      >,
+      res: express.Response<any, Record<string, any>>
+    ) {
+      if (req.headers["x-no-compression"]) {
+        // don't compress responses with this request header
+        return false;
+      }
+      // fallback to standard filter function
+      return compression.filter(req, res);
+    }
     app.use("/", router);
 
     const io = new SocketIO(server, {
@@ -131,9 +137,7 @@ AppDataSource.initialize()
 
     io.engine.use(helmet());
     io.use((socket, next) => {
-      let req = socket.request as express.Request;
-      let res = {} as express.Response;
-      sessionMiddleware(req, res, next as express.NextFunction);
+      socketMiddleware(socket, next);
     });
     socket(io);
 

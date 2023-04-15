@@ -17,7 +17,7 @@ import { Context } from "../types/Context";
 import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
 import { JwtSendRefreshToken, JwtSignAccessToken } from "../utils/jwt";
 import jsonP from "@ptndev/json";
-import { checkAuth } from "../middleware/checkAuth";
+import { checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
 
 @Resolver()
@@ -25,7 +25,7 @@ export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
   async register(
     @Arg("registerInput") registerInput: RegisterInput,
-    @Ctx() { req, res }: Context
+    @Ctx() { res }: Context
   ): Promise<UserMutationResponse> {
     const validateRegisterInputErrors = validateRegisterInput(registerInput);
     if (validateRegisterInputErrors !== null) {
@@ -83,7 +83,7 @@ export class UserResolver {
         coverImage,
       });
       await User.save(newUser);
-      req.session.userId = newUser.id;
+
       const dataUser = jsonP.removeKeyObject(newUser, ["password"]);
 
       const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
@@ -113,7 +113,7 @@ export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
   async login(
     @Arg("loginInput") { usernameOrEmail, password }: LoginInput,
-    @Ctx() { req, res }: Context
+    @Ctx() { res }: Context
   ): Promise<UserMutationResponse> {
     try {
       const isEmail = validateEmail(usernameOrEmail);
@@ -149,7 +149,6 @@ export class UserResolver {
         };
       }
 
-      req.session.userId = existingUser.id;
       existingUser.email = hideEmailElement(existingUser.email).emailHide;
       existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
       const dataUser = jsonP.removeKeyObject(existingUser, ["password"]);
@@ -192,11 +191,11 @@ export class UserResolver {
       });
     });
   }
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => UserMutationResponse)
   async user(@Ctx() { req }: Context): Promise<UserMutationResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
 
       const existingUser = await User.findOneBy({
         id,
@@ -223,7 +222,7 @@ export class UserResolver {
       };
     }
   }
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => UserMutationResponse)
   async getUser(
     @Arg("username") username: string
@@ -259,7 +258,7 @@ export class UserResolver {
       };
     }
   }
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => UserQueryResponse)
   async getUsers(): Promise<UserQueryResponse> {
     try {

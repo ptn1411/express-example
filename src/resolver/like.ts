@@ -20,7 +20,7 @@ export class LikeResolver {
 
     @Ctx() { req }: Context
   ): Promise<LikeResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
     if (!REACTIONS_TYPE.includes(typeReact)) {
       return {
         code: 404,
@@ -94,7 +94,7 @@ export class LikeResolver {
 
     @Ctx() { req }: Context
   ): Promise<LikeResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
     if (!REACTIONS_TYPE.includes(typeReact)) {
       return {
         code: 404,

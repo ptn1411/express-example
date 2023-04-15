@@ -10,7 +10,7 @@ import { PostMutationResponse } from "../types/PostMutationResponse";
 import { CreatePostInput } from "../types/CreatePostInput";
 import { Post } from "../entity/Post";
 import { UpdatePostInput } from "../types/UpdatePostInput";
-import { checkAuth } from "../middleware/checkAuth";
+import { checkAccessToken } from "../middleware/checkAuth";
 import { Context } from "../types/Context";
 import { AppDataSource } from "../data-source";
 import { v4 as uuidv4 } from "uuid";
@@ -22,7 +22,7 @@ import { getPostsFromFriend } from "../services/post";
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async createPost(
     @Arg("createPostInput") { content, images }: CreatePostInput,
     @Ctx() { req }: Context
@@ -42,7 +42,7 @@ export class PostResolver {
         uuid,
       });
 
-      if (!req.session.userId) {
+      if (!req.user?.id) {
         return {
           code: 401,
           success: false,
@@ -50,7 +50,7 @@ export class PostResolver {
         };
       }
       const user = await User.findOneBy({
-        id: req.session.userId,
+        id: req.user.id,
       });
       if (!user) {
         return {
@@ -79,7 +79,7 @@ export class PostResolver {
   @Query((_return) => PostQueryResponse)
   async posts(@Ctx() { req }: Context): Promise<PostQueryResponse> {
     try {
-      // const postRepository = await AppDataSource.getRepository(Post);
+      //const postRepository = await AppDataSource.getRepository(Post)
       // const posts = await postRepository.find({
       //   relations: {
       //     user: true,
@@ -103,14 +103,14 @@ export class PostResolver {
       // .leftJoinAndSelect("post.comments", "comment")
 
       // .getMany();
-      if (!req.session.userId) {
+      if (!req.user?.id) {
         return {
           code: 401,
           success: false,
           message: `error`,
         };
       }
-      const posts = await getPostsFromFriend(req.session.userId);
+      const posts = await getPostsFromFriend(req.user?.id);
 
       return {
         code: 200,
@@ -128,7 +128,7 @@ export class PostResolver {
     }
   }
   @Query((_return) => PostQueryResponse, { nullable: true })
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async getPostsUserByUserName(
     @Arg("username") username: string
   ): Promise<PostQueryResponse> {
@@ -185,7 +185,7 @@ export class PostResolver {
     }
   }
   @Query((_return) => PostQueryResponse, { nullable: true })
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async post(@Arg("uuid") uuid: string): Promise<PostQueryResponse> {
     try {
       const postRepository = await AppDataSource.getRepository(Post);
@@ -221,7 +221,7 @@ export class PostResolver {
   }
 
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async updatePost(
     @Arg("updatePostInput") { uuid, content, images }: UpdatePostInput
   ): Promise<PostMutationResponse> {
@@ -257,7 +257,7 @@ export class PostResolver {
     }
   }
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async deletePost(@Arg("uuid") uuid: string): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({

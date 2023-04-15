@@ -15,7 +15,7 @@ export class ImageResolver {
     @Arg("date") date: string,
     @Ctx() { req }: Context
   ): Promise<ImageResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
 
     if (!id) {
       return {

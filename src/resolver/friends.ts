@@ -13,7 +13,7 @@ export class FriendsResolver {
   @Query((_return) => FriendQueryResponse)
   async friends(@Ctx() { req }: Context): Promise<FriendQueryResponse> {
     try {
-      const uuid = req.session.userId;
+      const uuid = req.user?.id;
       const existingFriends = await AppDataSource.getRepository(Friends).find({
         where: [
           {

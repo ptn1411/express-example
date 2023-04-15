@@ -4,6 +4,9 @@ import { AuthenticationError } from "apollo-server-core";
 import { JwtVerifyAccessToken } from "../utils/jwt";
 import { User } from "../entity/User";
 import { NextFunction, Request, Response } from "express-serve-static-core";
+import { Socket } from "socket.io";
+import { ExtendedError } from "socket.io/dist/namespace";
+import { DefaultEventsMap } from "socket.io/dist/typed-events";
 
 export interface JwtPayload {
   user: User;
@@ -11,33 +14,6 @@ export interface JwtPayload {
   exp: number;
 }
 
-export const checkAuth: MiddlewareFn<Context> = (
-  { context: { req } },
-  next
-) => {
-  if (!req.session.userId) {
-    throw new AuthenticationError(
-      "Not authenticated to perform GraphQL operations"
-    );
-  }
-  return next();
-};
-export const checkAuthApi = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  console.log(req.session.userId);
-
-  if (!req.session.userId) {
-    return res.json({
-      code: 401,
-      success: false,
-      message: "Not authenticated to perform GraphQL operations",
-    });
-  }
-  return next();
-};
 export const checkAccessToken: MiddlewareFn<Context> = ({ context }, next) => {
   const authHeader = context.req.header("Authorization");
   const accessToken = authHeader && authHeader.split(" ")[1];
@@ -91,4 +67,26 @@ export const checkApiAuthAccessToken = (
       message: "error",
     });
   }
+};
+
+export const socketMiddleware = (
+  socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>,
+  next: {
+    (err?: ExtendedError | undefined): void;
+    (arg0: Error | undefined): void;
+  }
+) => {
+  let req = socket.request as Request;
+  const accessToken = socket.handshake.auth.token;
+  if (!accessToken) {
+    next(new Error("Socket authentication error"));
+  }
+
+  const decodedUser = JwtVerifyAccessToken(accessToken as string) as JwtPayload;
+  if (decodedUser === undefined) {
+    next(new Error("Socket authentication error"));
+  }
+
+  req.user = decodedUser.user;
+  next();
 };

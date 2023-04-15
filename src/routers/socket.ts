@@ -7,7 +7,7 @@ import { sendNotificationByUser } from "../services/notification";
 export default function (io: Socket | any) {
   io.on("connection", function (socket: Socket | any) {
     const req = socket.request as Request;
-    const uuid = req.session.userId;
+    const uuid = req.user?.id;
     if (!uuid) {
       chat.leaveConversation(socket.id).then(() => {
         socket.disconnect();

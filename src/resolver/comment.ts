@@ -20,7 +20,7 @@ export class CommentResolver {
     @Ctx() { req }: Context
   ): Promise<CommentResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
       if (content.length <= 1) {
         return {
           code: 404,
@@ -28,7 +28,7 @@ export class CommentResolver {
           message: `sai react`,
         };
       }
-      
+
       const user = await User.findOneBy({
         id: id,
       });
@@ -97,7 +97,7 @@ export class CommentResolver {
     @Ctx() { req }: Context
   ): Promise<CommentResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
       if (content.length > 0) {
         return {
           code: 404,

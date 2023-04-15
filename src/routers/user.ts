@@ -46,6 +46,8 @@ router.put(
     });
 
     if (existingUserOnline) {
+      existingUserOnline.updateAt = new Date();
+      await AppDataSource.manager.save(existingUserOnline);
       return res.json({
         code: 200,
         success: true,

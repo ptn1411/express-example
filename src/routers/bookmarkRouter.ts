@@ -19,7 +19,7 @@ router.get(
       },
       where: {
         user: {
-          id: req.session.userId,
+          id: req.user?.id,
         },
       },
     });
@@ -58,7 +58,7 @@ router.get(
         uuid: uuid,
       },
       user: {
-        id: req.session.userId,
+        id: req.user?.id,
       },
     });
     if (!existingBookmark) {

@@ -5,6 +5,6 @@ import { Context } from "../types/Context";
 export class HelloResolver {
   @Query((_returns) => String)
   hello(@Ctx() { req }: Context) {
-    return "Hello word " + req.session.userId;
+    return "Hello word " + req.user?.id;
   }
 }

@@ -14,7 +14,7 @@ export class BookmarkResolver {
     @Arg("postUuid") postUuid: string
   ): Promise<BookmarkResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
 
       const user = await User.findOneBy({
         id: id,
@@ -91,7 +91,7 @@ export class BookmarkResolver {
   @Query((_return) => BookmarkResponse)
   async bookmarkAll(@Ctx() { req }: Context): Promise<BookmarkResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
 
       if (!id) {
         return {
@@ -129,7 +129,6 @@ export class BookmarkResolver {
             id: user.id,
           },
         },
-     
       });
       if (!bookmarks) {
         return {
