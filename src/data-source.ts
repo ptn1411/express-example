@@ -3,7 +3,7 @@ import { DataSource } from "typeorm";
 import { User } from "./entity/User";
 import { Post } from "./entity/Post";
 import { Image } from "./entity/Image";
-// import path from "path";
+import path from "path";
 import { __prod__ } from "./constants";
 import { Like } from "./entity/Like";
 import { Comment } from "./entity/Comment";
@@ -39,5 +39,5 @@ export const AppDataSource = new DataSource({
     UserOnline,
     Device,
   ],
-  // migrations: [path.join(__dirname, "/migrations/*")],
+  migrations: [path.join(__dirname, "/migrations/*")],
 });

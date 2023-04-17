@@ -40,6 +40,7 @@ export class PostResolver {
         content,
         images,
         uuid,
+        shares: 0,
       });
 
       if (!req.user?.id) {

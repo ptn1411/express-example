@@ -3,6 +3,7 @@ import { Request } from "express";
 import * as chat from "../services/chat";
 import { MessageEntity } from "../entity/Message";
 import { sendNotificationByUser } from "../services/notification";
+import { isOnlineUserById } from "../services/user";
 
 export default function (io: Socket | any) {
   io.on("connection", function (socket: Socket | any) {
@@ -39,11 +40,15 @@ export default function (io: Socket | any) {
           activeConversations.forEach((activeConversation) => {
             io.to(activeConversation.socketId).emit("newMessage", message);
             if (activeConversation.user.id !== uuid) {
-              sendNotificationByUser(
-                activeConversation.user.id,
-                `${activeConversation.user.fullName} đã gửi tin nhắn`,
-                message.message
-              );
+              isOnlineUserById(activeConversation.user.id).then((isOnline) => {
+                if (!isOnline) {
+                  sendNotificationByUser(
+                    activeConversation.user.id,
+                    `${activeConversation.user.fullName} đã gửi tin nhắn`,
+                    message.message
+                  );
+                }
+              });
             }
           });
         }

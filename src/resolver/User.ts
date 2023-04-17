@@ -15,10 +15,16 @@ import { LoginInput } from "../types/LoginInput";
 import { hideEmailElement, hidePhoneElement, validateEmail } from "../utils";
 import { Context } from "../types/Context";
 import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
-import { JwtSendRefreshToken, JwtSignAccessToken } from "../utils/jwt";
+import {
+  JwtSendRefreshToken,
+  JwtSignAccessToken,
+  JwtVerifyAccessToken,
+} from "../utils/jwt";
 import jsonP from "@ptndev/json";
-import { checkAccessToken } from "../middleware/checkAuth";
+import { JwtPayload, checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
+import { sendHtmlEmail } from "../services/email";
+import { AppDataSource } from "../data-source";
 
 @Resolver()
 export class UserResolver {
@@ -110,6 +116,7 @@ export class UserResolver {
       };
     }
   }
+
   @Mutation((_return) => UserMutationResponse)
   async login(
     @Arg("loginInput") { usernameOrEmail, password }: LoginInput,
@@ -179,16 +186,11 @@ export class UserResolver {
     }
   }
   @Mutation((_return) => Boolean)
-  async logout(@Ctx() { req, res }: Context): Promise<boolean> {
+  async logout(@Ctx() { res }: Context): Promise<boolean> {
     return new Promise((resolve, _reject) => {
       res.clearCookie(COOKIE_NAME);
       res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
-      req.session.destroy((error) => {
-        if (error) {
-          resolve(false);
-        }
-        resolve(true);
-      });
+      resolve(true);
     });
   }
   @UseMiddleware(checkAccessToken)
@@ -281,6 +283,75 @@ export class UserResolver {
         success: false,
         message: `server ${error}`,
       };
+    }
+  }
+  @Query((_return) => Boolean)
+  async forgotPassword(@Arg("email") email: string): Promise<boolean> {
+    try {
+      const existingUser = await User.findOne({
+        where: {
+          email,
+        },
+      });
+      if (!existingUser) {
+        return false;
+      }
+
+      const token = JwtSignAccessToken(
+        {
+          user: {
+            id: existingUser.id,
+            email: existingUser.email,
+            username: existingUser.username,
+          },
+        },
+        1000 * 60 * 5
+      );
+      if (!token) {
+        return false;
+      }
+      const link = `${process.env.FRONTEND_URL}/resetpassword/${token}`;
+
+      await sendHtmlEmail(
+        { to: existingUser.email },
+        "quen mat khau",
+        "password-reset.ejs",
+        {
+          link,
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.log(error);
+
+      return false;
+    }
+  }
+  @Mutation((_return) => Boolean)
+  async resetPassword(
+    @Arg("token") token: string,
+    @Arg("password") password: string
+  ): Promise<boolean> {
+    try {
+      const decodedUser = JwtVerifyAccessToken(token as string) as JwtPayload;
+      if (!decodedUser) {
+        return false;
+      }
+      const existingUser = await User.findOne({
+        where: {
+          id: decodedUser.user.id,
+        },
+      });
+      if (!existingUser) {
+        return false;
+      }
+      const hashPassword = await argon2.hash(password);
+      existingUser.password = hashPassword;
+      await AppDataSource.manager.save(existingUser);
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

@@ -11,6 +11,7 @@ import { Image } from "../entity/Image";
 import { v4 as uuidv4 } from "uuid";
 import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
+const pathFolderUpload = process.env.PATH_FOlDER_UPLOAD;
 const multerStorage = multer.memoryStorage();
 
 const router = Router();
@@ -82,7 +83,10 @@ const resizeImages = async (
       const newFilename = `${
         dateNow().yearNoTiles
       }-${filenameRemoveVietNam}-${Date.now()}.png`;
-      const pathYearMonth = `uploads/images/${dateNow().yyyy}/${dateNow().mm}`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
       await mkdirp(pathYearMonth);
       await sharp(file.buffer)
         // .resize(640, 320)
@@ -99,6 +103,7 @@ const resizeImages = async (
       });
       if (user) {
         newImage.user = user;
+        newImage.alt = user.fullName;
         await AppDataSource.manager.save(newImage);
         req.body.images.push(newFilename);
       }
@@ -140,13 +145,13 @@ router.get("/n/:uuid", (req: Request, res: Response) => {
       message: "not image",
     });
   }
-  const pathYearMonth = `../../uploads/images/${uuid.slice(0, 4)}/${uuid.slice(
-    4,
-    6
-  )}`;
+  const pathYearMonth = `${pathFolderUpload}/uploads/images/${uuid.slice(
+    0,
+    4
+  )}/${uuid.slice(4, 6)}`;
 
   const options = {
-    root: path.join(__dirname, pathYearMonth),
+    root: path.join(pathYearMonth),
     dotfiles: "deny",
     headers: {
       "x-timestamp": Date.now(),
@@ -178,7 +183,7 @@ router.get("/u/:uuid", async (req: Request, res: Response) => {
   }
   const fileName = existingImage?.path.slice(22) as string;
   const options = {
-    root: path.join(__dirname, `../../${existingImage?.path.slice(0, 22)}`),
+    root: path.join(`${pathFolderUpload}/${existingImage?.path.slice(0, 22)}`),
     dotfiles: "deny",
     headers: {
       "x-timestamp": Date.now(),

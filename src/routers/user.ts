@@ -39,32 +39,39 @@ router.put(
       return res.status(401).send("Unauthorized");
     }
 
-    const existingUserOnline = await UserOnline.findOneBy({
-      user: {
-        id: uuid,
-      },
-    });
+    try {
+      const existingUserOnline = await UserOnline.findOneBy({
+        user: {
+          id: uuid,
+        },
+      });
 
-    if (existingUserOnline) {
-      existingUserOnline.updateAt = new Date();
-      await AppDataSource.manager.save(existingUserOnline);
+      if (existingUserOnline) {
+        existingUserOnline.updateAt = new Date();
+        await AppDataSource.manager.save(existingUserOnline);
+        return res.json({
+          code: 200,
+          success: true,
+          lastOnline: existingUserOnline.updateAt,
+        });
+      }
+      const newUserOnline = await UserOnline.create({
+        user: {
+          id: uuid,
+        },
+      });
+      await AppDataSource.manager.save(newUserOnline);
       return res.json({
         code: 200,
         success: true,
-        lastOnline: existingUserOnline.updateAt,
+        lastOnline: newUserOnline.updateAt,
+      });
+    } catch (error) {
+      return res.json({
+        code: 500,
+        success: false,
       });
     }
-    const newUserOnline = await UserOnline.create({
-      user: {
-        id: uuid,
-      },
-    });
-    await AppDataSource.manager.save(newUserOnline);
-    return res.json({
-      code: 200,
-      success: true,
-      lastOnline: newUserOnline.updateAt,
-    });
   }
 );
 router.post(
