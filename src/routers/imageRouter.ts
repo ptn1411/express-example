@@ -111,6 +111,108 @@ const resizeImages = async (
   );
   return next();
 };
+const resizeImagesAvatar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.files)
+    return res.json({
+      status: false,
+      code: 400,
+      message: "Not File",
+    });
+
+  req.body.images = [];
+
+  const files = req.files as unknown as Express.Multer.File[];
+  await Promise.all(
+    files.map(async (file: Express.Multer.File) => {
+      const filename = file.originalname.replace(/\..+$/, "");
+
+      const filenameRemoveVietNam = removeVietNam(filename).split(" ").join("");
+      const newFilename = `${
+        dateNow().yearNoTiles
+      }-${filenameRemoveVietNam}-${Date.now()}.png`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
+      await mkdirp(pathYearMonth);
+      await sharp(file.buffer)
+        .resize(100, 100)
+        .toFormat("png")
+        .jpeg({ quality: 90 })
+        .toFile(`${pathYearMonth}/${newFilename}`);
+      const uuid = uuidv4();
+      const newImage = await Image.create({
+        uuid: uuid,
+        path: `${pathYearMonth}/${newFilename}`,
+      });
+      const user = await User.findOneBy({
+        id: req.user?.id,
+      });
+      if (user) {
+        newImage.user = user;
+        newImage.alt = user.fullName;
+        await AppDataSource.manager.save(newImage);
+        req.body.images.push(newFilename);
+      }
+    })
+  );
+  return next();
+};
+const resizeImagesCover = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.files)
+    return res.json({
+      status: false,
+      code: 400,
+      message: "Not File",
+    });
+
+  req.body.images = [];
+
+  const files = req.files as unknown as Express.Multer.File[];
+  await Promise.all(
+    files.map(async (file: Express.Multer.File) => {
+      const filename = file.originalname.replace(/\..+$/, "");
+
+      const filenameRemoveVietNam = removeVietNam(filename).split(" ").join("");
+      const newFilename = `${
+        dateNow().yearNoTiles
+      }-${filenameRemoveVietNam}-${Date.now()}.png`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
+      await mkdirp(pathYearMonth);
+      await sharp(file.buffer)
+        .resize(1000, 300)
+        .toFormat("png")
+        .jpeg({ quality: 90 })
+        .toFile(`${pathYearMonth}/${newFilename}`);
+      const uuid = uuidv4();
+      const newImage = await Image.create({
+        uuid: uuid,
+        path: `${pathYearMonth}/${newFilename}`,
+      });
+      const user = await User.findOneBy({
+        id: req.user?.id,
+      });
+      if (user) {
+        newImage.user = user;
+        newImage.alt = user.fullName;
+        await AppDataSource.manager.save(newImage);
+        req.body.images.push(newFilename);
+      }
+    })
+  );
+  return next();
+};
 const getResult = async (req: Request, res: Response) => {
   if (req.body.images.length <= 0) {
     return res.json({
@@ -129,6 +231,21 @@ const getResult = async (req: Request, res: Response) => {
     images: images,
   });
 };
+
+router.post(
+  "/avatar",
+  checkApiAuthAccessToken,
+  uploadImages,
+  resizeImagesAvatar,
+  getResult
+);
+router.post(
+  "/cover",
+  checkApiAuthAccessToken,
+  uploadImages,
+  resizeImagesCover,
+  getResult
+);
 router.post(
   "/",
   checkApiAuthAccessToken,

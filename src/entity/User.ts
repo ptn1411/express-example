@@ -6,6 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { Post } from "./Post";
@@ -17,6 +19,7 @@ import { Friends } from "./Friends";
 import { Role } from "../constants";
 import { MessageEntity } from "./Message";
 import { Device } from "./Device";
+import { ProfileUser } from "./Profile-user";
 
 @ObjectType()
 @Entity()
@@ -104,6 +107,10 @@ export class User extends BaseEntity {
 
   @OneToMany(() => MessageEntity, (messageEntity) => messageEntity.user)
   messages!: MessageEntity[];
+
+  @OneToOne(() => ProfileUser, (profile) => profile.user)
+  @JoinColumn()
+  profile!: ProfileUser;
 
   @Field()
   @CreateDateColumn({

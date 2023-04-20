@@ -18,6 +18,7 @@ import { User } from "../entity/User";
 
 import { PostQueryResponse } from "../types/PostQueryResponse";
 import { getPostsFromFriend } from "../services/post";
+import { PostsQueryResponse } from "../types/PostsQueryResponse";
 
 @Resolver()
 export class PostResolver {
@@ -77,8 +78,13 @@ export class PostResolver {
       };
     }
   }
-  @Query((_return) => PostQueryResponse)
-  async posts(@Ctx() { req }: Context): Promise<PostQueryResponse> {
+  @UseMiddleware(checkAccessToken)
+  @Query((_return) => PostsQueryResponse)
+  async posts(
+    @Ctx() { req }: Context,
+    @Arg("page") page: number,
+    @Arg("limit") limit: number
+  ): Promise<PostsQueryResponse> {
     try {
       //const postRepository = await AppDataSource.getRepository(Post)
       // const posts = await postRepository.find({
@@ -104,6 +110,7 @@ export class PostResolver {
       // .leftJoinAndSelect("post.comments", "comment")
 
       // .getMany();
+
       if (!req.user?.id) {
         return {
           code: 401,
@@ -111,12 +118,14 @@ export class PostResolver {
           message: `error`,
         };
       }
-      const posts = await getPostsFromFriend(req.user?.id);
+      const posts = await getPostsFromFriend(req.user?.id, page, limit);
 
       return {
         code: 200,
         success: true,
         posts: posts,
+        page: page,
+        limit: limit,
       };
     } catch (error) {
       console.log(error);
@@ -128,15 +137,19 @@ export class PostResolver {
       };
     }
   }
-  @Query((_return) => PostQueryResponse, { nullable: true })
+  @Query((_return) => PostsQueryResponse, { nullable: true })
   @UseMiddleware(checkAccessToken)
   async getPostsUserByUserName(
-    @Arg("username") username: string
-  ): Promise<PostQueryResponse> {
+    @Arg("username") username: string,
+    @Arg("page") page: number,
+    @Arg("limit") limit: number
+  ): Promise<PostsQueryResponse> {
     try {
       const user = await User.findOneBy({
         username: username,
       });
+      page = page || 1;
+      limit = limit || 10;
       if (!user) {
         return {
           code: 404,
@@ -156,14 +169,13 @@ export class PostResolver {
             user: true,
           },
         },
-        order: {
-          createAt: "DESC",
-        },
         where: {
           user: {
             id: user.id,
           },
         },
+        take: limit,
+        skip: (page - 1) * limit,
       });
       if (!posts) {
         return {
@@ -176,6 +188,8 @@ export class PostResolver {
         code: 200,
         success: true,
         posts: posts,
+        page: page,
+        limit: limit,
       };
     } catch (error) {
       return {
@@ -185,8 +199,8 @@ export class PostResolver {
       };
     }
   }
+
   @Query((_return) => PostQueryResponse, { nullable: true })
-  @UseMiddleware(checkAccessToken)
   async post(@Arg("uuid") uuid: string): Promise<PostQueryResponse> {
     try {
       const postRepository = await AppDataSource.getRepository(Post);

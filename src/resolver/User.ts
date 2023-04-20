@@ -25,6 +25,8 @@ import { JwtPayload, checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
 import { sendHtmlEmail } from "../services/email";
 import { AppDataSource } from "../data-source";
+import { UpdateUserInput } from "../types/UpdateUserInput";
+import { validateUpdateUserInput } from "../utils/validateUpdateUserInput";
 
 @Resolver()
 export class UserResolver {
@@ -264,7 +266,19 @@ export class UserResolver {
   @Query((_return) => UserQueryResponse)
   async getUsers(): Promise<UserQueryResponse> {
     try {
-      const existingUsers = await User.find();
+      const existingUsers = await User.find({
+        select: {
+          id: true,
+          username: true,
+          avatar: true,
+          fullName: true,
+        },
+        take: 20,
+        order: {
+          fullName: "ASC",
+          id: "DESC",
+        },
+      });
       if (!existingUsers) {
         return {
           code: 404,
@@ -352,6 +366,57 @@ export class UserResolver {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+  @UseMiddleware(checkAccessToken)
+  @Mutation((_return) => UserMutationResponse)
+  async updateUser(
+    @Arg("updateUserInput") updateUserInput: UpdateUserInput,
+
+    @Ctx() { req }: Context
+  ): Promise<UserMutationResponse> {
+    try {
+      const uuid = req.user?.id;
+      const validateUpdateUserInputError =
+        validateUpdateUserInput(updateUserInput);
+
+      if (validateUpdateUserInputError !== null) {
+        return {
+          code: 400,
+          success: false,
+          ...validateUpdateUserInputError,
+        };
+      }
+      const existingUser = await User.findOneBy({
+        id: uuid,
+      });
+      if (!existingUser) {
+        return {
+          code: 404,
+          success: false,
+        };
+      }
+
+      existingUser.avatar = updateUserInput.avatar || existingUser.avatar;
+      existingUser.coverImage =
+        updateUserInput.coverImage || existingUser.coverImage;
+      existingUser.firstName =
+        updateUserInput.firstName || existingUser.firstName;
+      existingUser.lastName = updateUserInput.lastName || existingUser.lastName;
+
+      existingUser.fullName = updateUserInput.fullName || existingUser.fullName;
+      await AppDataSource.manager.save(existingUser);
+      return {
+        code: 200,
+        success: true,
+        user: existingUser,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server`,
+      };
     }
   }
 }

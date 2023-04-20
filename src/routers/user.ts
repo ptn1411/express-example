@@ -84,7 +84,12 @@ router.post(
       return res.status(401).send("Unauthorized");
     }
     const ip = req.ip;
-
+    const existingUser = await User.findOneBy({
+      id: uuid,
+    });
+    if (!existingUser) {
+      return res.status(401).send("Unauthorized");
+    }
     const existingDevice = await Device.findOneBy({
       user: {
         id: uuid,

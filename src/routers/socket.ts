@@ -29,13 +29,11 @@ export default function (io: Socket | any) {
 
     socket.on("sendMessage", async (newMessage: MessageEntity) => {
       if (!newMessage.conversation) return null;
-
-      if (newMessage.conversation.id) {
-        const message = await chat.createMessage(newMessage);
-
-        if (message) {
+      const message = await chat.createMessage(newMessage);
+      if (message) {
+        if (message.conversation.id) {
           const activeConversations = await chat.getActiveUsers(
-            message.conversation.id
+            newMessage.conversation.id
           );
           activeConversations.forEach((activeConversation) => {
             io.to(activeConversation.socketId).emit("newMessage", message);

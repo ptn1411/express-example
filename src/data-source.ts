@@ -14,6 +14,7 @@ import { ConversationEntity } from "./entity/Conversation";
 import { MessageEntity } from "./entity/Message";
 import { UserOnline } from "./entity/User-online";
 import { Device } from "./entity/Device";
+import { ProfileUser } from "./entity/Profile-user";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -38,6 +39,7 @@ export const AppDataSource = new DataSource({
     MessageEntity,
     UserOnline,
     Device,
+    ProfileUser,
   ],
   migrations: [path.join(__dirname, "/migrations/*")],
 });

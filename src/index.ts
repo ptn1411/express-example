@@ -38,6 +38,7 @@ import socket from "./routers/socket";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { socketMiddleware } from "./middleware/checkAuth";
+import { ProfileResolver } from "./resolver/profile";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -80,6 +81,7 @@ AppDataSource.initialize()
           CommentResolver,
           BookmarkResolver,
           FriendsResolver,
+          ProfileResolver,
         ],
         validate: false,
       }),

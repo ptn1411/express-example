@@ -47,7 +47,7 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
     };
   }
 
-  if (registerInput.lastName.length <= 2) {
+  if (registerInput.lastName.length <= 1) {
     return {
       message: "sai lastName",
       errors: [
@@ -58,7 +58,7 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.firstName.length <= 2) {
+  if (registerInput.firstName.length <= 1) {
     return {
       message: "sai firstName",
       errors: [
