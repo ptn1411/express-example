@@ -5,7 +5,7 @@ import removeVietNam from "../utils/removeVietnameseTones";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { dateNow } from "../utils";
 import { mkdirp } from "mkdirp";
-import path from "path";
+
 import { checkApiAuthAccessToken } from "../middleware/checkAuth";
 import { Image } from "../entity/Image";
 import { v4 as uuidv4 } from "uuid";
@@ -256,7 +256,7 @@ router.post(
 router.get("/n/:uuid", (req: Request, res: Response) => {
   const uuid = req.params.uuid;
   if (!uuid) {
-    return res.json({
+    res.json({
       status: false,
       code: 404,
       message: "not image",
@@ -265,18 +265,9 @@ router.get("/n/:uuid", (req: Request, res: Response) => {
   const pathYearMonth = `${pathFolderUpload}/uploads/images/${uuid.slice(
     0,
     4
-  )}/${uuid.slice(4, 6)}`;
+  )}/${uuid.slice(4, 6)}/${uuid}`;
 
-  const options = {
-    root: path.join(pathYearMonth),
-    dotfiles: "deny",
-    headers: {
-      "x-timestamp": Date.now(),
-      "x-sent": true,
-    },
-  };
-
-  return res.sendFile(uuid, options);
+  res.sendFile(pathYearMonth);
 });
 router.get("/u/:uuid", async (req: Request, res: Response) => {
   const uuid = req.params.uuid;
@@ -298,17 +289,7 @@ router.get("/u/:uuid", async (req: Request, res: Response) => {
       message: "not image",
     });
   }
-  const fileName = existingImage?.path.slice(22) as string;
-  const options = {
-    root: path.join(`${pathFolderUpload}/${existingImage?.path.slice(0, 22)}`),
-    dotfiles: "deny",
-    headers: {
-      "x-timestamp": Date.now(),
-      "x-sent": true,
-      "x-alt": existingImage.alt,
-    },
-  };
 
-  return res.sendFile(fileName, options);
+  return res.sendFile(existingImage?.path);
 });
 export default router;

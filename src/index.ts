@@ -54,8 +54,8 @@ AppDataSource.initialize()
     });
     redisClient.connect().catch(console.error);
 
-    app.use(express.json({ limit: "50mb" }));
-    app.use(express.urlencoded({ limit: "50mb", extended: true }));
+    app.use(express.json({ limit: "64mb" }));
+    app.use(express.urlencoded({ limit: "64mb", extended: true }));
 
     app.use(
       cors({
@@ -128,6 +128,7 @@ AppDataSource.initialize()
       // fallback to standard filter function
       return compression.filter(req, res);
     }
+
     app.use("/", router);
 
     const io = new SocketIO(server, {

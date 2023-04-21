@@ -1,4 +1,11 @@
-import { Arg, Ctx, Query, Mutation, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Query,
+  Mutation,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 
 import { Context } from "../types/Context";
 
@@ -10,9 +17,11 @@ import { REACTIONS_TYPE } from "../constants";
 import { Post } from "../entity/Post";
 import { LikeResponse } from "../types/LikeResponse";
 import { Comment } from "../entity/Comment";
+import { checkAccessToken } from "../middleware/checkAuth";
 
 @Resolver()
 export class LikeResolver {
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => LikeResponse)
   async likePost(
     @Arg("typeReact") typeReact: string,
@@ -87,6 +96,7 @@ export class LikeResolver {
       like: existingLike,
     };
   }
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => LikeResponse)
   async likeComment(
     @Arg("typeReact") typeReact: string,

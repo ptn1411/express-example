@@ -27,8 +27,8 @@ export class IPost {
   user!: IUser;
 
   @Field((_type) => [ILike], { nullable: true })
-  likes!: ILike[];
+  likes?: ILike[];
 
   @Field((_type) => [IComment], { nullable: true })
-  comments!: IComment[];
+  comments?: IComment[];
 }

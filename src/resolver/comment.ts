@@ -1,17 +1,22 @@
-import { Arg, Ctx, Query, Mutation, Resolver } from "type-graphql";
-
+import {
+  Arg,
+  Ctx,
+  Query,
+  Mutation,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import { Context } from "../types/Context";
-
 import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
-
 import { Post } from "../entity/Post";
-
 import { Comment } from "../entity/Comment";
 import { CommentResponse } from "../types/CommentResponse";
+import { checkAccessToken } from "../middleware/checkAuth";
 
 @Resolver()
 export class CommentResolver {
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => CommentResponse)
   async commentPost(
     @Arg("content") content: string,
@@ -89,6 +94,7 @@ export class CommentResolver {
       };
     }
   }
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => CommentResponse)
   async commentComment(
     @Arg("content") content: string,
@@ -211,8 +217,6 @@ export class CommentResolver {
         comments: comment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

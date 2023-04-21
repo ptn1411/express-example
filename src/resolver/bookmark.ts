@@ -1,13 +1,15 @@
-import { Arg, Ctx, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Query, Resolver, UseMiddleware } from "type-graphql";
 import { Context } from "../types/Context";
 import { AppDataSource } from "../data-source";
 import { Bookmark } from "../entity/Bookmark";
 import { BookmarkResponse } from "../types/BookmarkResponse";
 import { User } from "../entity/User";
 import { Post } from "../entity/Post";
+import { checkAccessToken } from "../middleware/checkAuth";
 
 @Resolver()
 export class BookmarkResolver {
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => BookmarkResponse)
   async createBookmark(
     @Ctx() { req }: Context,
@@ -88,6 +90,7 @@ export class BookmarkResolver {
       };
     }
   }
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => BookmarkResponse)
   async bookmarkAll(@Ctx() { req }: Context): Promise<BookmarkResponse> {
     try {

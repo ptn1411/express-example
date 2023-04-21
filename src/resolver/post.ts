@@ -204,14 +204,26 @@ export class PostResolver {
   async post(@Arg("uuid") uuid: string): Promise<PostQueryResponse> {
     try {
       const postRepository = await AppDataSource.getRepository(Post);
-      const post = await postRepository
-        .createQueryBuilder("post")
-        .leftJoinAndSelect("post.user", "user")
-        .leftJoinAndSelect("post.likes", "like")
-        .leftJoinAndSelect("post.comments", "comment")
-        .where("post.uuid = :uuid", { uuid: uuid })
-
-        .getOne();
+      const post = await postRepository.findOne({
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+        where: {
+          uuid: uuid,
+        },
+      });
+      // .createQueryBuilder("post")
+      // .leftJoinAndSelect("post.user", "user")
+      // .leftJoinAndSelect("post.likes", "like")
+      // .leftJoinAndSelect("post.comments", "comment")
+      // .where("post.uuid = :uuid", { uuid: uuid })
+      //.getOne();
       if (!post) {
         return {
           code: 404,
@@ -219,7 +231,6 @@ export class PostResolver {
           message: `error`,
         };
       }
-      console.log(post);
 
       return {
         code: 200,
