@@ -318,6 +318,7 @@ export class PostResolver {
       select: {
         uuid: true,
       },
+      take: 100,
     });
     return posts.map((post) => post.uuid);
   }

@@ -27,7 +27,7 @@ import { sendHtmlEmail } from "../services/email";
 import { AppDataSource } from "../data-source";
 import { UpdateUserInput } from "../types/UpdateUserInput";
 import { validateUpdateUserInput } from "../utils/validateUpdateUserInput";
-import { Friends } from "../entity/Friends";
+
 import { getFriends } from "../services/friend";
 
 @Resolver()
@@ -321,6 +321,7 @@ export class UserResolver {
         if (!friendsId.includes(friend.id)) {
           return friend;
         }
+        return;
       });
 
       return {
