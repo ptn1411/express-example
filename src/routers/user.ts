@@ -126,7 +126,7 @@ router.post(
   }
 );
 router.get("/new", async (req: Request, res: Response) => {
-  if (req.query.auth != "1111") {
+  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
     return res.status(401).send("Unauthorized");
   }
   const password = faker.internet.password();
@@ -164,7 +164,7 @@ router.get("/new", async (req: Request, res: Response) => {
   });
 });
 router.get("/friend", async (req: Request, res: Response) => {
-  if (req.query.auth != "1111") {
+  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
     return res.status(401).send("Unauthorized");
   }
   const data = await dbUser().findAll();
@@ -184,7 +184,7 @@ router.get("/friend", async (req: Request, res: Response) => {
   });
 });
 router.get("/post", async (req: Request, res: Response) => {
-  if (req.query.auth != "1111") {
+  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
     return res.status(401).send("Unauthorized");
   }
 

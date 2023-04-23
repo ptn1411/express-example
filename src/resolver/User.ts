@@ -78,6 +78,41 @@ export class UserResolver {
           ],
         };
       }
+      const tokenLink = JwtSignAccessToken(
+        {
+          user: {
+            email: email,
+            username: username,
+          },
+        },
+        1000 * 60 * 5
+      );
+
+      const existingEmail = await sendHtmlEmail(
+        { to: email },
+        "Email Confirmation",
+        "email-confirmation.ejs",
+        {
+          data: {
+            link: `${process.env.FRONTEND_URL}/confirmation/${tokenLink}`,
+            fullName: fullName,
+          },
+        }
+      );
+      await sendHtmlEmail(
+        { to: email },
+        "Welcome to Pham Thanh Nam!",
+        "welcome.ejs",
+        {}
+      );
+      if (!existingEmail) {
+        return {
+          code: 500,
+          success: false,
+          message: `error sending email`,
+        };
+      }
+
       const hashPassword = await argon2.hash(password);
       const newUser = User.create({
         username,
@@ -91,6 +126,7 @@ export class UserResolver {
         sex,
         avatar,
         coverImage,
+        statusEmail: "pending",
       });
       await User.save(newUser);
 
@@ -105,6 +141,7 @@ export class UserResolver {
         };
       }
       JwtSendRefreshToken(res, { user: dataUser });
+
       return {
         code: 200,
         success: true,
@@ -147,7 +184,6 @@ export class UserResolver {
           ],
         };
       }
-      console.log(existingUser);
 
       const passwordValid = await argon2.verify(
         existingUser.password,
@@ -368,7 +404,7 @@ export class UserResolver {
 
       await sendHtmlEmail(
         { to: existingUser.email },
-        "quen mat khau",
+        "Forgot Password",
         "password-reset.ejs",
         {
           link,
@@ -457,6 +493,26 @@ export class UserResolver {
         success: false,
         message: `server`,
       };
+    }
+  }
+  @Query((_return) => Boolean)
+  async confirmation(@Arg("token") token: string): Promise<boolean> {
+    try {
+      const decodedUser = JwtVerifyAccessToken(token as string) as JwtPayload;
+      if (!decodedUser) {
+        return false;
+      }
+      const existingUser = await User.findOneBy({
+        email: decodedUser.user.email,
+      });
+      if (!existingUser) {
+        return false;
+      }
+      existingUser.statusEmail = "confirmed";
+      await AppDataSource.manager.save(existingUser);
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

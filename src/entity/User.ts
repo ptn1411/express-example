@@ -20,6 +20,7 @@ import { Role } from "../constants";
 import { MessageEntity } from "./Message";
 import { Device } from "./Device";
 import { ProfileUser } from "./Profile-user";
+import { User_Status_Email } from "../types/User";
 
 @ObjectType()
 @Entity()
@@ -111,6 +112,10 @@ export class User extends BaseEntity {
   @OneToOne(() => ProfileUser, (profile) => profile.user)
   @JoinColumn()
   profile!: ProfileUser;
+
+  @Field()
+  @Column()
+  statusEmail!: User_Status_Email;
 
   @Field()
   @CreateDateColumn({
