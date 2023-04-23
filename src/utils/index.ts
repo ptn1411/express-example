@@ -1,3 +1,5 @@
+import { LevelPassword } from "../constants";
+
 function isNullOrUndefined(value: string) {
   return value === null || value === undefined;
 }
@@ -46,10 +48,19 @@ function validateEmail(email: string) {
   return !!email.match(regexEmail);
 }
 
-function validatePassword(password: string) {
-  let regexPassword = new RegExp(
-    "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
-  );
+function validatePassword(level: LevelPassword, password: string) {
+  let regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})/;
+  if (level === LevelPassword.LOW) {
+    regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})/;
+  }
+  if (level === LevelPassword.MEDIUM) {
+    regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})/;
+  }
+  if (level === LevelPassword.HIGH) {
+    regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
+  }
+  let regexPassword = new RegExp(regex);
+
   return !!password.match(regexPassword);
 }
 

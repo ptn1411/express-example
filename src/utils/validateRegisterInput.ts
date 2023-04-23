@@ -1,5 +1,6 @@
 import { validateEmail, validatePassword } from "./index";
 import { RegisterInput } from "../types/RegisterInput";
+import { LevelPassword } from "../constants";
 
 export const validateRegisterInput = (registerInput: RegisterInput) => {
   if (!validateEmail(registerInput.email)) {
@@ -69,13 +70,13 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (!validatePassword(registerInput.password)) {
+  if (!validatePassword(LevelPassword.LOW, registerInput.password)) {
     return {
       message: "sai password",
       errors: [
         {
           field: "password",
-          message: "password phai co ky tu dawc biet 8 ky tu co in hoa",
+          message: "password phai co ky tu 6 ky tu co in hoa",
         },
       ],
     };

@@ -312,4 +312,13 @@ export class PostResolver {
       };
     }
   }
+  @Query((_return) => [String])
+  async getAllPostIds(): Promise<string[]> {
+    const posts = await Post.find({
+      select: {
+        uuid: true,
+      },
+    });
+    return posts.map((post) => post.uuid);
+  }
 }

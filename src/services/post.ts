@@ -7,8 +7,20 @@ export let getPostsFromFriend = async (
   page = 1,
   limit = 10
 ) => {
+  console.log(page, limit);
+
   const friendsId = await getFriends(userId);
+  const arrayFriendsId: any = [];
+  friendsId.map((friend) => {
+    arrayFriendsId.push({
+      user: {
+        id: friend,
+      },
+    });
+  });
+
   const postRepository = await AppDataSource.getRepository(Post);
+
   const posts = await postRepository.find({
     relations: {
       user: true,
@@ -22,15 +34,10 @@ export let getPostsFromFriend = async (
     order: {
       createAt: "DESC",
     },
+    where: [...arrayFriendsId],
     take: limit,
     skip: (page - 1) * limit,
   });
 
-  const postsData: any = [];
-  posts.forEach((post) => {
-    if (friendsId.includes(post.user.id)) {
-      postsData.push(post);
-    }
-  });
-  return postsData;
+  return posts;
 };

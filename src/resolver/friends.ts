@@ -8,6 +8,7 @@ import { Friends } from "../entity/Friends";
 import { FriendQueryResponse } from "../types/FriendQueryResponse";
 import { log } from "console";
 import { checkAccessToken } from "../middleware/checkAuth";
+import { UserQueryResponse } from "../types/UserQueryResponse";
 
 @Resolver()
 export class FriendsResolver {
@@ -49,6 +50,44 @@ export class FriendsResolver {
         success: true,
         message: `success`,
         friends: existingFriends,
+        users: existingUsers,
+      };
+    } catch (error) {
+      log(error);
+      return {
+        code: 500,
+        success: false,
+        message: `error`,
+      };
+    }
+  }
+  @UseMiddleware(checkAccessToken)
+  @Query((_return) => UserQueryResponse)
+  async friendRequest(@Ctx() { req }: Context): Promise<UserQueryResponse> {
+    try {
+      const uuid = req.user?.id;
+      const existingFriends = await AppDataSource.getRepository(Friends).find({
+        where: {
+          receiver: {
+            id: uuid,
+          },
+          status: "pending",
+        },
+        relations: ["creator", "receiver"],
+      });
+      let userUuid: string[] = [];
+      existingFriends.forEach((friend) => {
+        if (friend.receiver.id === uuid) {
+          userUuid.push(friend.creator.id);
+        }
+      });
+      const existingUsers = await AppDataSource.getRepository(User).findByIds(
+        userUuid
+      );
+      return {
+        code: 200,
+        success: true,
+        message: `success`,
         users: existingUsers,
       };
     } catch (error) {

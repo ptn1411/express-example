@@ -27,6 +27,8 @@ import { sendHtmlEmail } from "../services/email";
 import { AppDataSource } from "../data-source";
 import { UpdateUserInput } from "../types/UpdateUserInput";
 import { validateUpdateUserInput } from "../utils/validateUpdateUserInput";
+import { Friends } from "../entity/Friends";
+import { getFriends } from "../services/friend";
 
 @Resolver()
 export class UserResolver {
@@ -58,7 +60,7 @@ export class UserResolver {
         coverImage,
       } = registerInput;
       const existingUser = await User.findOne({
-        where: [{ username }, { email }, { phone }],
+        where: [{ username }, { email }],
       });
 
       if (existingUser) {
@@ -145,6 +147,8 @@ export class UserResolver {
           ],
         };
       }
+      console.log(existingUser);
+
       const passwordValid = await argon2.verify(
         existingUser.password,
         password
@@ -292,6 +296,41 @@ export class UserResolver {
         users: existingUsers,
       };
     } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server ${error}`,
+      };
+    }
+  }
+  @UseMiddleware(checkAccessToken)
+  @Query((_return) => UserQueryResponse)
+  async getUsersYouMayKnow(
+    @Ctx() { req }: Context
+  ): Promise<UserQueryResponse> {
+    try {
+      const uuid = req.user?.id as string;
+      const friendsId = await getFriends(uuid);
+
+      const existingFriends = await User.find({
+        order: {
+          createAt: "DESC",
+        },
+      });
+      const existingFriendsId = existingFriends.filter((friend) => {
+        if (!friendsId.includes(friend.id)) {
+          return friend;
+        }
+      });
+
+      return {
+        code: 200,
+        success: true,
+        users: existingFriendsId,
+      };
+    } catch (error) {
+      console.log(error);
+
       return {
         code: 500,
         success: false,

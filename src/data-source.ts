@@ -1,10 +1,11 @@
 import "reflect-metadata";
+import path from "path";
+import { __prod__ } from "./constants";
 import { DataSource } from "typeorm";
 import { User } from "./entity/User";
 import { Post } from "./entity/Post";
 import { Image } from "./entity/Image";
-import path from "path";
-import { __prod__ } from "./constants";
+
 import { Like } from "./entity/Like";
 import { Comment } from "./entity/Comment";
 import { Bookmark } from "./entity/Bookmark";
@@ -41,5 +42,6 @@ export const AppDataSource = new DataSource({
     Device,
     ProfileUser,
   ],
+
   migrations: [path.join(__dirname, "/migrations/*")],
 });

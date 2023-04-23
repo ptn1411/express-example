@@ -15,3 +15,8 @@ export enum Role {
   PREMIUM = "premium",
   ADMIN = "admin",
 }
+export enum LevelPassword {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+}
