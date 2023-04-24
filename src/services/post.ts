@@ -7,8 +7,6 @@ export let getPostsFromFriend = async (
   page = 1,
   limit = 10
 ) => {
-  console.log(page, limit);
-
   const friendsId = await getFriends(userId);
   const arrayFriendsId: any = [];
   friendsId.map((friend) => {

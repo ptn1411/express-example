@@ -73,7 +73,6 @@ export class BookmarkResolver {
       bookmark.user = user;
       bookmark.post = post;
       await AppDataSource.manager.save(bookmark);
-      console.log(bookmark);
 
       return {
         code: 200,
@@ -82,8 +81,6 @@ export class BookmarkResolver {
         bookmarks: [bookmark],
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -147,8 +144,6 @@ export class BookmarkResolver {
         bookmarks: bookmarks,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

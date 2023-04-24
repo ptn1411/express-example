@@ -11,7 +11,6 @@ export let isOnlineUserById = async (userId: string) => {
     const dateNow = new Date();
     const dateOnline = new Date(existingUserOnline.updateAt);
     const timeDiff = dateOnline.getTime() - dateNow.getTime();
-    console.log(timeDiff);
 
     if (timeDiff < timeUpdateOnline) {
       return true;

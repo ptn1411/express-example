@@ -140,7 +140,7 @@ const resizeImagesAvatar = async (
       }/${dateNow().mm}`;
       await mkdirp(pathYearMonth);
       await sharp(file.buffer)
-        .resize(100, 100)
+        .resize(200, 200)
         .toFormat("png")
         .jpeg({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);

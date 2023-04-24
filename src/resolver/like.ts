@@ -186,7 +186,6 @@ export class LikeResolver {
           message: `error`,
         };
       }
-      console.log(likes);
 
       return {
         code: 200,
@@ -194,8 +193,6 @@ export class LikeResolver {
         likes: likes,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -225,8 +222,6 @@ export class LikeResolver {
         likes: likes,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

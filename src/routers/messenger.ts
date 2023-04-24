@@ -35,10 +35,10 @@ router.get(
       return res.status(401).send("Unauthorized");
     }
     if (!friendId) {
-      return res.status(400).send("Bad Request");
+      return res.status(404).send("Bad Request");
     }
     if (uuid === friendId) {
-      return res.status(400).send("Bad Request");
+      return res.status(404).send("Bad Request");
     }
     const data = await createConversation(uuid, friendId);
     return res.json({

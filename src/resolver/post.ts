@@ -128,8 +128,6 @@ export class PostResolver {
         limit: limit,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

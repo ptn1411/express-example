@@ -98,7 +98,7 @@ router.post(
       id: uuid,
     });
     if (!existingUser) {
-      return res.status(401).send("Unauthorized");
+      return res.status(404).send("Not found");
     }
     const existingDevice = await Device.findOneBy({
       user: {

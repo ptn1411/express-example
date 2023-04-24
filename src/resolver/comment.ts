@@ -86,8 +86,6 @@ export class CommentResolver {
         comments: postComments,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -147,8 +145,6 @@ export class CommentResolver {
         comment: existingComment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -182,8 +178,6 @@ export class CommentResolver {
         comments: comment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

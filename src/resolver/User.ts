@@ -12,16 +12,21 @@ import { UserMutationResponse } from "../types/UserMutationResponse";
 import { RegisterInput } from "../types/RegisterInput";
 import { validateRegisterInput } from "../utils/validateRegisterInput";
 import { LoginInput } from "../types/LoginInput";
-import { hideEmailElement, hidePhoneElement, validateEmail } from "../utils";
+import {
+  hideEmailElement,
+  hidePhoneElement,
+  removeKeyObject,
+  validateEmail,
+} from "../utils";
 import { Context } from "../types/Context";
 import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
 import {
-  JwtSendRefreshToken,
+  JwtGenerateTokens,
   JwtSignAccessToken,
   JwtVerifyAccessToken,
 } from "../utils/jwt";
-import jsonP from "@ptndev/json";
-import { JwtPayload, checkAccessToken } from "../middleware/checkAuth";
+
+import { checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
 import { sendHtmlEmail } from "../services/email";
 import { AppDataSource } from "../data-source";
@@ -34,8 +39,7 @@ import { getFriends } from "../services/friend";
 export class UserResolver {
   @Mutation((_return) => UserMutationResponse)
   async register(
-    @Arg("registerInput") registerInput: RegisterInput,
-    @Ctx() { res }: Context
+    @Arg("registerInput") registerInput: RegisterInput
   ): Promise<UserMutationResponse> {
     const validateRegisterInputErrors = validateRegisterInput(registerInput);
     if (validateRegisterInputErrors !== null) {
@@ -85,7 +89,7 @@ export class UserResolver {
             username: username,
           },
         },
-        1000 * 60 * 5
+        DAY_TIME
       );
 
       const existingEmail = await sendHtmlEmail(
@@ -130,24 +134,35 @@ export class UserResolver {
       });
       await User.save(newUser);
 
-      const dataUser = jsonP.removeKeyObject(newUser, ["password"]);
+      const dataUser = removeKeyObject(newUser, ["password"]);
 
-      const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
-      if (!accessToken) {
+      const accessToken = await JwtSignAccessToken(
+        { user: dataUser },
+        DAY_TIME
+      );
+      if (accessToken.error) {
         return {
           code: 500,
           success: false,
           message: `error token`,
         };
       }
-      JwtSendRefreshToken(res, { user: dataUser });
+      const token = await JwtGenerateTokens({ user: dataUser });
+      if (token.error) {
+        return {
+          code: 500,
+          success: false,
+          message: `error token`,
+        };
+      }
 
       return {
         code: 200,
         success: true,
         message: "User tao thanh cong ",
         user: newUser,
-        accessToken: accessToken,
+        accessToken: token.accessToken as string,
+        refreshToken: token.refreshToken as string,
       };
     } catch (error) {
       return {
@@ -160,8 +175,7 @@ export class UserResolver {
 
   @Mutation((_return) => UserMutationResponse)
   async login(
-    @Arg("loginInput") { usernameOrEmail, password }: LoginInput,
-    @Ctx() { res }: Context
+    @Arg("loginInput") { usernameOrEmail, password }: LoginInput
   ): Promise<UserMutationResponse> {
     try {
       const isEmail = validateEmail(usernameOrEmail);
@@ -200,26 +214,24 @@ export class UserResolver {
 
       existingUser.email = hideEmailElement(existingUser.email).emailHide;
       existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
-      const dataUser = jsonP.removeKeyObject(existingUser, ["password"]);
+      let dataUser = removeKeyObject(existingUser, ["password"]);
 
-      const accessToken = JwtSignAccessToken({ user: dataUser }, DAY_TIME);
-      if (!accessToken) {
+      const token = await JwtGenerateTokens({ user: dataUser });
+      if (token.error) {
         return {
           code: 500,
           success: false,
           message: `error token`,
         };
       }
-      JwtSendRefreshToken(res, { user: dataUser });
       return {
         code: 200,
         success: true,
         user: existingUser,
-        accessToken: accessToken,
+        accessToken: token.accessToken as string,
+        refreshToken: token.refreshToken as string,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -366,8 +378,6 @@ export class UserResolver {
         users: existingFriendsId,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -395,7 +405,7 @@ export class UserResolver {
             username: existingUser.username,
           },
         },
-        1000 * 60 * 5
+        DAY_TIME
       );
       if (!token) {
         return false;
@@ -413,8 +423,6 @@ export class UserResolver {
 
       return true;
     } catch (error) {
-      console.log(error);
-
       return false;
     }
   }
@@ -424,13 +432,13 @@ export class UserResolver {
     @Arg("password") password: string
   ): Promise<boolean> {
     try {
-      const decodedUser = JwtVerifyAccessToken(token as string) as JwtPayload;
-      if (!decodedUser) {
+      const decodedUser = await JwtVerifyAccessToken(token as string);
+      if (decodedUser.error) {
         return false;
       }
       const existingUser = await User.findOne({
         where: {
-          id: decodedUser.user.id,
+          id: decodedUser.data?.user.id,
         },
       });
       if (!existingUser) {
@@ -498,12 +506,12 @@ export class UserResolver {
   @Query((_return) => Boolean)
   async confirmation(@Arg("token") token: string): Promise<boolean> {
     try {
-      const decodedUser = JwtVerifyAccessToken(token as string) as JwtPayload;
-      if (!decodedUser) {
+      const decodedUser = await JwtVerifyAccessToken(token as string);
+      if (decodedUser.error) {
         return false;
       }
       const existingUser = await User.findOneBy({
-        email: decodedUser.user.email,
+        email: decodedUser.data?.user.email,
       });
       if (!existingUser) {
         return false;

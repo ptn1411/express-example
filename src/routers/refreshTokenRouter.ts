@@ -1,42 +1,48 @@
 import { Request, Response, Router } from "express";
-import {
-  JwtVerifyRefreshToken,
-  JwtSendRefreshToken,
-  JwtSignAccessToken,
-} from "../utils/jwt";
+import { JwtVerifyRefreshToken, JwtSignAccessToken } from "../utils/jwt";
 import { User } from "../entity/User";
+
+import { removeKeyObject } from "../utils";
 import { DAY_TIME } from "../constants";
-import { JwtPayload } from "../middleware/checkAuth";
+import { catchError } from "../middleware/checkAuth";
 
 const router = Router();
 
-router.get("/", async (req: Request, res: Response) => {
-  const refreshToken =
-    req.cookies[process.env.REFRESH_TOKEN_COOKIE_NAME as string];
-  if (!refreshToken) return res.sendStatus(401);
+router.post("/", async (req: Request, res: Response) => {
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken)
+    return res.status(403).json({ message: "Refresh Token is required!" });
 
   try {
-    const decodeUser = JwtVerifyRefreshToken(refreshToken) as JwtPayload;
-    if (!decodeUser) return res.sendStatus(401);
+    const decodeUser = await JwtVerifyRefreshToken(refreshToken);
+
+    if (decodeUser.error) {
+      return catchError(decodeUser.error, res);
+    }
     const existingUser = await User.findOne({
       where: {
-        id: decodeUser.user.id,
+        id: decodeUser.data?.user.id,
       },
     });
-    if (!existingUser) return res.sendStatus(401);
+    if (!existingUser) {
+      return res.status(404).send({ message: "User Not found." });
+    }
 
-    const accessToken = JwtSignAccessToken(existingUser, DAY_TIME);
-    if (!accessToken) return res.sendStatus(401);
+    const dataUser = removeKeyObject(existingUser, ["password"]);
 
-    JwtSendRefreshToken(res, existingUser);
+    const token = await JwtSignAccessToken({ user: dataUser }, DAY_TIME);
+    if (token.error) {
+      return res.status(500).send({ message: "server" });
+    }
 
     return res.json({
       success: true,
       code: 200,
-      accessToken: accessToken,
+      accessToken: token.data,
     });
   } catch (error) {
-    return res.sendStatus(403);
+    return res.sendStatus(500).send({ message: "server" });
   }
 });
 
