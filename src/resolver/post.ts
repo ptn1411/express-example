@@ -210,6 +210,9 @@ export class PostResolver {
           },
           comments: {
             user: true,
+            likes: {
+              user: true,
+            },
           },
         },
         where: {
@@ -316,7 +319,7 @@ export class PostResolver {
       select: {
         uuid: true,
       },
-      take: 100,
+      take: 20,
     });
     return posts.map((post) => post.uuid);
   }

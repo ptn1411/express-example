@@ -27,6 +27,9 @@ export let getPostsFromFriend = async (
       },
       comments: {
         user: true,
+        likes: {
+          user: true,
+        },
       },
     },
     order: {

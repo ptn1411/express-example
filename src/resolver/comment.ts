@@ -102,7 +102,7 @@ export class CommentResolver {
   ): Promise<CommentResponse> {
     try {
       const id = req.user?.id;
-      if (content.length > 0) {
+      if (content.length <= 0) {
         return {
           code: 404,
           success: false,
@@ -190,14 +190,22 @@ export class CommentResolver {
   ): Promise<CommentResponse> {
     try {
       const commentRepository = await AppDataSource.getRepository(Comment);
-      const comment = await commentRepository
-        .createQueryBuilder("comment")
-        .leftJoinAndSelect("comment.user", "user")
-        .leftJoinAndSelect("comment.like", "like")
-        .leftJoinAndSelect("comment.comment", "comment")
-        .where("comment.commentId = :commentId", { commentId: commentId })
-        .getMany();
-
+      const comment = await commentRepository.find({
+        where: {
+          comment: {
+            id: commentId,
+          },
+        },
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+      });
       if (!comment) {
         return {
           code: 404,
@@ -211,6 +219,8 @@ export class CommentResolver {
         comments: comment,
       };
     } catch (error) {
+      console.log(error);
+
       return {
         code: 500,
         success: false,
