@@ -91,7 +91,7 @@ const resizeImages = async (
       await sharp(file.buffer)
         // .resize(640, 320)
         .toFormat("png")
-        .jpeg({ quality: 90 })
+        .png({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);
       const uuid = uuidv4();
       const newImage = await Image.create({
@@ -142,7 +142,7 @@ const resizeImagesAvatar = async (
       await sharp(file.buffer)
         .resize(200, 200)
         .toFormat("png")
-        .jpeg({ quality: 90 })
+        .png({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);
       const uuid = uuidv4();
       const newImage = await Image.create({
@@ -193,7 +193,7 @@ const resizeImagesCover = async (
       await sharp(file.buffer)
         .resize(1000, 300)
         .toFormat("png")
-        .jpeg({ quality: 90 })
+        .png({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);
       const uuid = uuidv4();
       const newImage = await Image.create({
