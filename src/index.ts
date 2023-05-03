@@ -22,7 +22,6 @@ import { UserResolver } from "./resolver/user";
 
 import { Context } from "./types/Context";
 
-import { createClient } from "redis";
 import { ORIGIN, __prod__ } from "./constants";
 import { PostResolver } from "./resolver/post";
 import { ImageResolver } from "./resolver/image";
@@ -45,14 +44,6 @@ AppDataSource.initialize()
     const app: Express = express();
     const server = new http.Server(app);
     const port = process.env.PORT;
-    let redisClient = createClient({
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: 6379,
-      },
-      password: process.env.REDIS_PASSWORD,
-    });
-    redisClient.connect().catch(console.error);
 
     app.use(express.json({ limit: "64mb" }));
     app.use(express.urlencoded({ limit: "64mb", extended: true }));

@@ -6,6 +6,6 @@ import { Role } from "../../constants";
 
 const router = Router();
 
-router.use("/user", checkApiAuthAccessToken, checkRole(Role.ADMIN), user);
+router.use("/user", checkApiAuthAccessToken, checkRole([Role.ADMIN]), user);
 
 export default router;

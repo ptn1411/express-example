@@ -1,9 +1,12 @@
+import { KEY_PREFIX } from "../constants";
 import { AppDataSource } from "../data-source";
 import { ActiveConversationEntity } from "../entity/Active-conversation";
 import { ConversationEntity } from "../entity/Conversation";
 import { MessageEntity } from "../entity/Message";
 import { User } from "../entity/User";
+import redisClient from "../redis";
 import { removeKeyObject } from "../utils";
+import { listFriendOnline } from "./friend";
 const arrayKeyRemove = [
   "password",
   "email",
@@ -194,6 +197,21 @@ export let getActiveUsers = async (conversationId: number) => {
   });
   return activeConversation;
 };
+export let getSocketIdByUuid = async (uuid: string) => {
+  const listUser = await listFriendOnline(uuid);
+  if (listUser === null) {
+    return null;
+  }
+
+  const keys = listUser.map((friend) => `${KEY_PREFIX}socketid:${friend}`);
+
+  if (keys.length === 0) {
+    return null;
+  }
+  const listOnline = await redisClient.mget(keys);
+
+  return listOnline.filter((x) => x) as string[];
+};
 export let createMessage = async (message: MessageEntity) => {
   const existingUser = await User.findOne({
     where: {
@@ -244,6 +262,7 @@ export let getMessages = async (conversationId: number) => {
 
   // .getMany();
 };
+
 export let removeActiveConversations = async () => {
   return await AppDataSource.getRepository(ActiveConversationEntity)
     .createQueryBuilder()

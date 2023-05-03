@@ -19,7 +19,12 @@ import {
   validateEmail,
 } from "../utils";
 import { Context } from "../types/Context";
-import { COOKIE_NAME, DAY_TIME, REFRESH_TOKEN_COOKIE_NAME } from "../constants";
+import {
+  COOKIE_NAME,
+  DAY_TIME,
+  KEY_PREFIX,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from "../constants";
 import {
   JwtGenerateTokens,
   JwtSignAccessToken,
@@ -34,6 +39,7 @@ import { UpdateUserInput } from "../types/UpdateUserInput";
 import { validateUpdateUserInput } from "../utils/validateUpdateUserInput";
 
 import { getFriends } from "../services/friend";
+import redisClient from "../redis";
 
 @Resolver()
 export class UserResolver {
@@ -240,10 +246,12 @@ export class UserResolver {
     }
   }
   @Mutation((_return) => Boolean)
-  async logout(@Ctx() { res }: Context): Promise<boolean> {
-    return new Promise((resolve, _reject) => {
+  async logout(@Ctx() { req, res }: Context): Promise<boolean> {
+    return new Promise(async (resolve, _reject) => {
       res.clearCookie(COOKIE_NAME);
       res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+      await redisClient.del(`${KEY_PREFIX}userid:${req.user?.id}`);
+      await redisClient.del(`${KEY_PREFIX}socketid:${req.user?.id}`);
       resolve(true);
     });
   }
@@ -286,6 +294,42 @@ export class UserResolver {
     try {
       const existingUser = await User.findOneBy({
         username,
+      });
+      if (!existingUser) {
+        return {
+          code: 404,
+          success: false,
+        };
+      }
+
+      existingUser.email = "";
+      existingUser.phone = "";
+      existingUser.birthday = "";
+      existingUser.sex = false;
+      existingUser.createAt = new Date();
+      existingUser.updateAt = new Date();
+
+      return {
+        code: 200,
+        success: true,
+        user: existingUser,
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: `server ${error}`,
+      };
+    }
+  }
+  @UseMiddleware(checkAccessToken)
+  @Query((_return) => UserMutationResponse)
+  async getUserByUuid(
+    @Arg("userUuid") userUuid: string
+  ): Promise<UserMutationResponse> {
+    try {
+      const existingUser = await User.findOneBy({
+        id: userUuid,
       });
       if (!existingUser) {
         return {

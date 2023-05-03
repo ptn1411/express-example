@@ -10,6 +10,8 @@ import { newFriends } from "../services/friend";
 import argon2 from "argon2";
 import { Post } from "../entity/Post";
 import { v4 as uuidv4 } from "uuid";
+import redisClient from "../redis";
+import { KEY_PREFIX } from "../constants";
 
 const router = Router();
 
@@ -70,6 +72,7 @@ router.put(
           id: uuid,
         },
       });
+      await redisClient.set(`${KEY_PREFIX}userid:${uuid}`, uuid);
       await AppDataSource.manager.save(newUserOnline);
       return res.json({
         code: 200,
@@ -147,6 +150,7 @@ router.get("/new", async (req: Request, res: Response) => {
       "https://api.phamthanhnam.com/image/n/20230423-useravatar-1682214795690.png",
     coverImage:
       "https://api.phamthanhnam.com/image/n/20230423-backgroundlogin-1682214873268.png",
+    statusEmail: "confirmed",
   });
   await AppDataSource.manager.save(newUser);
   await dbUser()
