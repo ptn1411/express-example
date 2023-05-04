@@ -197,6 +197,28 @@ export let getActiveUsers = async (conversationId: number) => {
   });
   return activeConversation;
 };
+
+export let getConversationUser = async (conversationId: number) => {
+  const existingConversation = await AppDataSource.getRepository(
+    ConversationEntity
+  ).findOne({
+    where: {
+      id: conversationId,
+    },
+    relations: {
+      users: true,
+    },
+    select: {
+      users: {
+        id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
+  });
+  return existingConversation;
+};
 export let getSocketIdByUuid = async (uuid: string) => {
   const listUser = await listFriendOnline(uuid);
   if (listUser === null) {
@@ -254,6 +276,7 @@ export let getMessages = async (conversationId: number) => {
         fullName: true,
       },
     },
+    take: 20,
   });
   // .createQueryBuilder("message")
   // .leftJoinAndSelect("message.user", "user")

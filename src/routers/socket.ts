@@ -26,6 +26,7 @@ export default function (io: Socket | any) {
         io.to(socket.id).emit("conversations", conversations);
       });
     }
+
     listFriendOnline(uuid).then((friends) => {
       io.to(socket.id).emit("onlineFriends", friends);
     });
@@ -51,16 +52,54 @@ export default function (io: Socket | any) {
           const activeConversations = await chat.getActiveUsers(
             newMessage.conversation.id
           );
+          redisClient.get(`${KEY_PREFIX}socketid:${uuid}`).then((socketId) => {
+            if (socketId) {
+              io.to(socketId).emit("newMessage", message);
+            }
+          });
+          const conversations = await chat.getConversationUser(
+            newMessage.conversation.id
+          );
+          conversations?.users.forEach((user) => {
+            if (user.id !== uuid) {
+              redisClient
+                .get(`${KEY_PREFIX}socketid:${user.id}`)
+                .then((socketId) => {
+                  if (socketId) {
+                    io.to(socketId).emit("newChatWindow", {
+                      id: newMessage.conversation.id,
+                      isOpen: true,
+                      user: {
+                        id: req.user?.id,
+                        fullName: req.user?.fullName,
+                        avatar: req.user?.avatar,
+                        username: req.user?.username,
+                      },
+                    });
+                  }
+                });
+            }
+          });
 
           activeConversations.forEach((activeConversation) => {
-            io.to(activeConversation.socketId).emit("newMessage", message);
-
+            // io.to(activeConversation.socketId).emit("newMessage", message);
             if (activeConversation.user.id !== uuid) {
               redisClient
                 .get(`${KEY_PREFIX}socketid:${activeConversation.user.id}`)
                 .then((socketId) => {
                   if (socketId) {
-                    io.to(socketId).emit("newMessageApp", message);
+                    io.to(socketId).emit("newChatWindow", {
+                      id: activeConversation.conversationId,
+                      isOpen: true,
+                      user: {
+                        id: req.user?.id,
+                        fullName: req.user?.fullName,
+                        avatar: req.user?.avatar,
+                        username: req.user?.username,
+                      },
+                    });
+
+                    io.to(socketId).emit("newMessage", message);
                   }
 
                   if (socketId === null) {
@@ -91,6 +130,13 @@ export default function (io: Socket | any) {
         io.to(socket.id).emit("messages", messages);
       }
     });
+    socket.on("chatWindowJoinConversation", async (conversationId: number) => {
+      if (conversationId) {
+        const messages = await chat.getMessages(conversationId);
+        io.to(socket.id).emit("chatWindowMessages", messages);
+      }
+    });
+
     socket.on("leaveConversation", () => {
       chat.leaveConversation(socket.id);
     });

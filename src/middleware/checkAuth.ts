@@ -140,6 +140,7 @@ export const checkAccessToken: MiddlewareFn<Context> = async (
         return catchApolloError(decodedRefreshToken.error);
       }
       context.req.user = decodedRefreshToken.data?.user;
+      return next();
     }
     return catchApolloError(decodedUser.error);
   }
