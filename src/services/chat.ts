@@ -266,7 +266,7 @@ export let getMessages = async (conversationId: number) => {
       user: true,
     },
     order: {
-      createdAt: "ASC",
+      createdAt: "DESC",
     },
     select: {
       user: {

@@ -19,6 +19,7 @@ import { User } from "../entity/User";
 import { PostQueryResponse } from "../types/PostQueryResponse";
 import { getPostsFromFriend } from "../services/post";
 import { PostsQueryResponse } from "../types/PostsQueryResponse";
+import { newPostNotion } from "../services/new-notification";
 
 @Resolver()
 export class PostResolver {
@@ -63,7 +64,7 @@ export class PostResolver {
       }
       newPost.user = user;
       await AppDataSource.manager.save(newPost);
-
+      await newPostNotion(user, newPost);
       return {
         code: 200,
         success: true,
@@ -171,6 +172,9 @@ export class PostResolver {
           user: {
             id: user.id,
           },
+        },
+        order: {
+          createAt: "ASC",
         },
         take: limit,
         skip: (page - 1) * limit,

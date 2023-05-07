@@ -18,6 +18,7 @@ import { Post } from "../entity/Post";
 import { LikeResponse } from "../types/LikeResponse";
 import { Comment } from "../entity/Comment";
 import { checkAccessToken } from "../middleware/checkAuth";
+import { newLike } from "../services/new-notification";
 
 @Resolver()
 export class LikeResolver {
@@ -49,8 +50,13 @@ export class LikeResolver {
       };
     }
 
-    const post = await Post.findOneBy({
-      uuid: postUuid,
+    const post = await Post.findOne({
+      where: {
+        uuid: postUuid,
+      },
+      relations: {
+        user: true,
+      },
     });
     if (!post) {
       return {
@@ -77,6 +83,7 @@ export class LikeResolver {
       }
       like.reactions = typeReact;
       await AppDataSource.manager.save(like);
+      await newLike(user, post, like);
       return {
         code: 200,
         success: true,
@@ -89,7 +96,9 @@ export class LikeResolver {
     });
     existingLike.user = user;
     existingLike.post = post;
-    await AppDataSource.manager.save(existingLike);
+    await existingLike.save();
+
+    await newLike(user, post, existingLike);
     return {
       code: 200,
       success: true,

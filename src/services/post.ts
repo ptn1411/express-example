@@ -33,7 +33,7 @@ export let getPostsFromFriend = async (
       },
     },
     order: {
-      createAt: "DESC",
+      createAt: "ASC",
     },
     where: [...arrayFriendsId],
     take: limit,

@@ -19,7 +19,6 @@ export default function (io: Socket | any) {
       });
       return;
     } else {
-      //await redisClient.flushall();
       await redisClient.set(`${KEY_PREFIX}userid:${uuid}`, uuid);
       await redisClient.set(`${KEY_PREFIX}socketid:${uuid}`, socket.id);
       chat.getConversationsWithUsers(uuid).then((conversations) => {
@@ -127,13 +126,13 @@ export default function (io: Socket | any) {
         const messages = await chat.getMessages(
           activeConversation.conversationId
         );
-        io.to(socket.id).emit("messages", messages);
+        io.to(socket.id).emit("messages", messages.reverse());
       }
     });
     socket.on("chatWindowJoinConversation", async (conversationId: number) => {
       if (conversationId) {
         const messages = await chat.getMessages(conversationId);
-        io.to(socket.id).emit("chatWindowMessages", messages);
+        io.to(socket.id).emit("chatWindowMessages", messages.reverse());
       }
     });
 

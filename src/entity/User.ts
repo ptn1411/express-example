@@ -21,7 +21,7 @@ import { MessageEntity } from "./Message";
 import { Device } from "./Device";
 import { ProfileUser } from "./Profile-user";
 import { User_Status_Email } from "../types/User";
-
+import { UserNotifications } from "./UserNotifications";
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
@@ -89,6 +89,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments!: Comment[];
+
+  @OneToMany(() => UserNotifications, (notification) => notification.user)
+  userNotifications!: UserNotifications[];
 
   @OneToMany(
     () => Friends,

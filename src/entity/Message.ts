@@ -8,6 +8,7 @@ import {
 } from "typeorm";
 import { ConversationEntity } from "./Conversation";
 import { User } from "./User";
+import { MessageType } from "../types/Message";
 
 @Entity("message")
 export class MessageEntity extends BaseEntity {
@@ -25,6 +26,9 @@ export class MessageEntity extends BaseEntity {
     (conversationEntity) => conversationEntity.messages
   )
   conversation!: ConversationEntity;
+
+  @Column({ type: "enum", enum: MessageType, default: MessageType.TEXT })
+  type!: MessageType;
 
   @CreateDateColumn({
     type: "timestamp",

@@ -13,6 +13,7 @@ import { Post } from "../entity/Post";
 import { Comment } from "../entity/Comment";
 import { CommentResponse } from "../types/CommentResponse";
 import { checkAccessToken } from "../middleware/checkAuth";
+import { newComment } from "../services/new-notification";
 
 @Resolver()
 export class CommentResolver {
@@ -45,8 +46,13 @@ export class CommentResolver {
         };
       }
 
-      const post = await Post.findOneBy({
-        uuid: postUuid,
+      const post = await Post.findOne({
+        where: {
+          uuid: postUuid,
+        },
+        relations: {
+          user: true,
+        },
       });
       if (!post) {
         return {
@@ -79,6 +85,7 @@ export class CommentResolver {
           },
         },
       });
+      await newComment(user, existingComment, post);
       return {
         code: 200,
         success: true,
