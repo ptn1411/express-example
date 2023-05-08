@@ -1,8 +1,10 @@
 import { validateEmail, validatePassword } from "./index";
 import { RegisterInput } from "../types/RegisterInput";
 import { LevelPassword } from "../constants";
-
+import { hasProfanity } from "../services/offensiveWords";
 export const validateRegisterInput = (registerInput: RegisterInput) => {
+ 
+
   if (!validateEmail(registerInput.email)) {
     return {
       message: "Sai email",
@@ -14,7 +16,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.username.length <= 5) {
+  if (
+    registerInput.username.length <= 5 ||
+    hasProfanity(registerInput.username)
+  ) {
     return {
       message: "sai username",
       errors: [
@@ -48,7 +53,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
     };
   }
 
-  if (registerInput.lastName.length <= 1) {
+  if (
+    registerInput.lastName.length <= 1 ||
+    hasProfanity(registerInput.username)
+  ) {
     return {
       message: "sai lastName",
       errors: [
@@ -59,7 +67,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.firstName.length <= 1) {
+  if (
+    registerInput.firstName.length <= 1 ||
+    hasProfanity(registerInput.username)
+  ) {
     return {
       message: "sai firstName",
       errors: [

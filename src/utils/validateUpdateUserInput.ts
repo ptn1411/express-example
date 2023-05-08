@@ -1,5 +1,5 @@
 import { UpdateUserInput } from "../types/UpdateUserInput";
-
+import { hasProfanity } from "../services/offensiveWords";
 export const validateUpdateUserInput = (updateUserInput: UpdateUserInput) => {
   if (updateUserInput.avatar.length <= 5) {
     return {
@@ -12,7 +12,10 @@ export const validateUpdateUserInput = (updateUserInput: UpdateUserInput) => {
       ],
     };
   }
-  if (updateUserInput.fullName.length <= 5) {
+  if (
+    updateUserInput.fullName.length <= 5 ||
+    hasProfanity(updateUserInput.fullName)
+  ) {
     return {
       message: "sai fullName",
       errors: [
@@ -34,7 +37,10 @@ export const validateUpdateUserInput = (updateUserInput: UpdateUserInput) => {
       ],
     };
   }
-  if (updateUserInput.firstName.length <= 2) {
+  if (
+    updateUserInput.firstName.length <= 2 ||
+    hasProfanity(updateUserInput.firstName)
+  ) {
     return {
       message: "sai firstName",
       errors: [
@@ -45,7 +51,10 @@ export const validateUpdateUserInput = (updateUserInput: UpdateUserInput) => {
       ],
     };
   }
-  if (updateUserInput.lastName.length <= 2) {
+  if (
+    updateUserInput.lastName.length <= 2 ||
+    hasProfanity(updateUserInput.lastName)
+  ) {
     return {
       message: "sai lastName",
       errors: [

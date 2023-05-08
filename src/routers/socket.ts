@@ -7,7 +7,7 @@ import { sendNotificationByUser } from "../services/notification";
 import redisClient from "../redis";
 import { listFriendOnline } from "../services/friend";
 import { KEY_PREFIX } from "../constants";
-
+import { censorText } from "../services/offensiveWords";
 export default function (io: Socket | any) {
   io.on("connection", async function (socket: Socket | any) {
     const req = socket.request as Request;
@@ -45,6 +45,7 @@ export default function (io: Socket | any) {
 
     socket.on("sendMessage", async (newMessage: MessageEntity) => {
       if (!newMessage.conversation) return null;
+      newMessage.message = censorText(newMessage.message);
       const message = await chat.createMessage(newMessage);
       if (message) {
         if (message.conversation.id) {

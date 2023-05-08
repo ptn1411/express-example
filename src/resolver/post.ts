@@ -20,7 +20,7 @@ import { PostQueryResponse } from "../types/PostQueryResponse";
 import { getPostsFromFriend } from "../services/post";
 import { PostsQueryResponse } from "../types/PostsQueryResponse";
 import { newPostNotion } from "../services/new-notification";
-
+import { censorText } from "../services/offensiveWords";
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
@@ -38,8 +38,9 @@ export class PostResolver {
         };
       }
       const uuid = uuidv4();
+      const newContent = await censorText(content);
       const newPost = await Post.create({
-        content,
+        content: newContent,
         images,
         uuid,
         shares: 0,

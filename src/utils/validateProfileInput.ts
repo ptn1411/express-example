@@ -1,7 +1,10 @@
 import { ProfileInput } from "../types/ProfileInput";
-
+import { hasProfanity } from "../services/offensiveWords";
 export const validateProfileInput = (profileInput: ProfileInput) => {
-  if (profileInput.workplace.length <= 2) {
+  if (
+    profileInput.workplace.length <= 2 ||
+    hasProfanity(profileInput.workplace)
+  ) {
     return {
       message: "sai workplace",
       errors: [
@@ -12,7 +15,7 @@ export const validateProfileInput = (profileInput: ProfileInput) => {
       ],
     };
   }
-  if (profileInput.from.length <= 2) {
+  if (profileInput.from.length <= 2 || hasProfanity(profileInput.from)) {
     return {
       message: "sai from",
       errors: [
@@ -23,7 +26,7 @@ export const validateProfileInput = (profileInput: ProfileInput) => {
       ],
     };
   }
-  if (profileInput.city.length <= 2) {
+  if (profileInput.city.length <= 2 || hasProfanity(profileInput.city)) {
     return {
       message: "sai city",
       errors: [
@@ -34,7 +37,10 @@ export const validateProfileInput = (profileInput: ProfileInput) => {
       ],
     };
   }
-  if (profileInput.relationship.length <= 2) {
+  if (
+    profileInput.relationship.length <= 2 ||
+    hasProfanity(profileInput.relationship)
+  ) {
     return {
       message: "sai relationship",
       errors: [
@@ -45,7 +51,10 @@ export const validateProfileInput = (profileInput: ProfileInput) => {
       ],
     };
   }
-  if (profileInput.education.length <= 2) {
+  if (
+    profileInput.education.length <= 2 ||
+    hasProfanity(profileInput.education)
+  ) {
     return {
       message: "sai education",
       errors: [

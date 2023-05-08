@@ -260,7 +260,7 @@ export class UserResolver {
   async user(@Ctx() { req }: Context): Promise<UserMutationResponse> {
     try {
       const id = req.user?.id;
-      
+
       const existingUser = await User.findOneBy({
         id,
       });
