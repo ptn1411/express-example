@@ -88,7 +88,7 @@ export class UserResolver {
           ],
         };
       }
-      const tokenLink = JwtSignAccessToken(
+      const tokenLink = await JwtSignAccessToken(
         {
           user: {
             email: email,
@@ -97,14 +97,19 @@ export class UserResolver {
         },
         DAY_TIME
       );
-
+      if (tokenLink.error) {
+        return {
+          code: 500,
+          success: false,
+        };
+      }
       const existingEmail = await sendHtmlEmail(
         { to: email },
         "Email Confirmation",
         "email-confirmation.ejs",
         {
           data: {
-            link: `${process.env.FRONTEND_URL}/confirmation/${tokenLink}`,
+            link: `${process.env.FRONTEND_URL}/confirmation/${tokenLink.data}`,
             fullName: fullName,
           },
         }
@@ -142,17 +147,6 @@ export class UserResolver {
 
       const dataUser = removeKeyObject(newUser, ["password"]);
 
-      const accessToken = await JwtSignAccessToken(
-        { user: dataUser },
-        DAY_TIME
-      );
-      if (accessToken.error) {
-        return {
-          code: 500,
-          success: false,
-          message: `error token`,
-        };
-      }
       const token = await JwtGenerateTokens({ user: dataUser });
       if (token.error) {
         return {
@@ -441,7 +435,7 @@ export class UserResolver {
         return false;
       }
 
-      const token = JwtSignAccessToken(
+      const token = await JwtSignAccessToken(
         {
           user: {
             id: existingUser.id,
@@ -451,10 +445,10 @@ export class UserResolver {
         },
         DAY_TIME
       );
-      if (!token) {
+      if (token.error) {
         return false;
       }
-      const link = `${process.env.FRONTEND_URL}/resetpassword/${token}`;
+      const link = `${process.env.FRONTEND_URL}/resetpassword/${token.data}`;
 
       await sendHtmlEmail(
         { to: existingUser.email },
