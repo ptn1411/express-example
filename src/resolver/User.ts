@@ -461,7 +461,9 @@ export class UserResolver {
         "Forgot Password",
         "password-reset.ejs",
         {
-          link,
+          data: {
+            link: link,
+          },
         }
       );
 
