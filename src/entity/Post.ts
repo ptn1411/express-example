@@ -13,7 +13,7 @@ import { User } from "./User";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
 import { Bookmark } from "./Bookmark";
-
+import { Report } from "./Report";
 @ObjectType()
 @Entity()
 export class Post extends BaseEntity {
@@ -29,6 +29,9 @@ export class Post extends BaseEntity {
 
   @OneToMany(() => Like, (like) => like.post)
   likes!: Like[];
+
+  @OneToMany(() => Report, (report) => report.post)
+  report!: Report[];
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments!: Comment[];

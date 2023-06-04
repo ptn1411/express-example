@@ -8,8 +8,20 @@ import redisClient from "../redis";
 import { listFriendOnline } from "../services/friend";
 import { KEY_PREFIX } from "../constants";
 import { censorText } from "../services/offensiveWords";
+import { MessageType } from "../types/Message";
+import eventEmitter from "../utils/eventManager";
+
 export default function (io: Socket | any) {
   io.on("connection", async function (socket: Socket | any) {
+    eventEmitter.on("notification", (data: any) => {
+      redisClient
+        .get(`${KEY_PREFIX}socketid:${data.user.id}`)
+        .then((socketId) => {
+          if (socketId) {
+            io.to(socketId).emit("notification", data);
+          }
+        });
+    });
     const req = socket.request as Request;
     const uuid = req.user?.id;
     const username = req.user?.username;
@@ -45,7 +57,10 @@ export default function (io: Socket | any) {
 
     socket.on("sendMessage", async (newMessage: MessageEntity) => {
       if (!newMessage.conversation) return null;
-      newMessage.message = censorText(newMessage.message);
+      if (newMessage.type === MessageType.TEXT) {
+        newMessage.message = censorText(newMessage.message);
+      }
+
       const message = await chat.createMessage(newMessage);
       if (message) {
         if (message.conversation.id) {

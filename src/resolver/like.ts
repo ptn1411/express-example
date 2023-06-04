@@ -168,6 +168,7 @@ export class LikeResolver {
     });
     existingLike.user = user;
     existingLike.comment = comment;
+
     await AppDataSource.manager.save(existingLike);
     return {
       code: 200,

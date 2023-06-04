@@ -6,6 +6,8 @@ import { AppDataSource } from "../data-source";
 import { getFriends } from "./friend";
 import { Like } from "../entity/Like";
 import { Comment } from "../entity/Comment";
+import eventEmitter from "../utils/eventManager";
+
 export let newPostNotion = async (user: User, post: Post) => {
   const newNotion = await Notifications.create({
     senderID: user.id,
@@ -16,11 +18,13 @@ export let newPostNotion = async (user: User, post: Post) => {
   const users = await User.findByIds(listFriendId);
   await newNotion.save();
   const newNotifications = users.map((value) => {
-    return UserNotifications.create({
+    const newUserNotion = UserNotifications.create({
       notification: newNotion,
       user: value,
       isRead: false,
     });
+    eventEmitter.emit("notification", newUserNotion);
+    return newUserNotion;
   });
 
   await AppDataSource.manager.save(newNotifications);
@@ -43,6 +47,7 @@ export let newLike = async (user: User, post: Post, like: Like) => {
       isRead: false,
     });
     await newUserNotion.save();
+    eventEmitter.emit("notification", newUserNotion);
     return;
   } catch (error) {
     console.log(error);
@@ -66,6 +71,7 @@ export let newComment = async (user: User, comment: Comment, post: Post) => {
       isRead: false,
     });
     await newUserNotion.save();
+    eventEmitter.emit("notification", newUserNotion);
     return;
   } catch (error) {
     console.log(error);
@@ -87,6 +93,7 @@ export let newFriend = async (user: User, friend: User) => {
     isRead: false,
   });
   await newUserNotion.save();
+  eventEmitter.emit("notification", newUserNotion);
 };
 export let newFriendAccepted = async (user: User, friend: User) => {
   const newNotion = await Notifications.create({
@@ -101,4 +108,22 @@ export let newFriendAccepted = async (user: User, friend: User) => {
     isRead: false,
   });
   await newUserNotion.save();
+  eventEmitter.emit("notification", newUserNotion);
+};
+export let newReportPostNotion = async (user: User, post: Post) => {
+  const newNotion = await Notifications.create({
+    senderID: user.id,
+    content: `${user.fullName} report post`,
+    url: `${process.env.FRONTEND_URL}/post/${post.uuid}`,
+  });
+
+  await newNotion.save();
+  const newUserNotion = await UserNotifications.create({
+    notification: newNotion,
+    user: user,
+    isRead: false,
+  });
+  await newUserNotion.save();
+
+  eventEmitter.emit("notification", newUserNotion);
 };

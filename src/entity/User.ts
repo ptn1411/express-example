@@ -22,6 +22,7 @@ import { Device } from "./Device";
 import { ProfileUser } from "./Profile-user";
 import { User_Status_Email } from "../types/User";
 import { UserNotifications } from "./UserNotifications";
+import { Report } from "./Report";
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
@@ -83,6 +84,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Like, (like) => like.user)
   likes!: Like[];
+
+  @OneToMany(() => Report, (report) => report.user)
+  report!: Report[];
 
   @OneToMany(() => Bookmark, (bookmark) => bookmark.user)
   bookmarks!: Bookmark[];

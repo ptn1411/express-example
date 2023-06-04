@@ -5,7 +5,6 @@ import { DataSource } from "typeorm";
 import { User } from "./entity/User";
 import { Post } from "./entity/Post";
 import { Image } from "./entity/Image";
-
 import { Like } from "./entity/Like";
 import { Comment } from "./entity/Comment";
 import { Bookmark } from "./entity/Bookmark";
@@ -18,6 +17,7 @@ import { Device } from "./entity/Device";
 import { ProfileUser } from "./entity/Profile-user";
 import { UserNotifications } from "./entity/UserNotifications";
 import { Notifications } from "./entity/Notifications";
+import { Report } from "./entity/Report";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -45,6 +45,7 @@ export const AppDataSource = new DataSource({
     ProfileUser,
     UserNotifications,
     Notifications,
+    Report,
   ],
 
   migrations: [path.join(__dirname, "/migrations/*")],
