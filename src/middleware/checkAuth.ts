@@ -1,12 +1,12 @@
-import { MiddlewareFn } from "type-graphql";
-import { Context } from "../types/Context";
 import { ApolloError } from "apollo-server-core";
-import { JwtVerifyAccessToken, JwtVerifyRefreshToken } from "../utils/jwt";
 import { NextFunction, Request, Response } from "express-serve-static-core";
+import jwt from "jsonwebtoken";
 import { Socket } from "socket.io";
 import { ExtendedError } from "socket.io/dist/namespace";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import jwt from "jsonwebtoken";
+import { MiddlewareFn } from "type-graphql";
+import { Context } from "../types/Context";
+import { JwtVerifyAccessToken, JwtVerifyRefreshToken } from "../utils/jwt";
 
 const { JsonWebTokenError } = jwt;
 

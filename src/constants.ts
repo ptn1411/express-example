@@ -7,8 +7,22 @@ export const KEY_PREFIX = __prod__ ? "prod" : "dev";
 export const REACTIONS_TYPE = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
 export const ORIGIN = __prod__
-  ? ["http://phamthanhnam.com", "https://phamthanhnam.com", "phamthanhnam.com"]
-  : ["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"];
+  ? [
+      "http://localhost:3000",
+      "http://localhost:8080",
+      "https://mxhserver.test",
+      "https://mxhclient.test",
+      "http://mxhserver.test",
+      "http://mxhclient.test",
+    ]
+  : [
+      "http://localhost:3000",
+      "http://localhost:8080",
+      "https://mxhserver.test",
+      "https://mxhclient.test",
+      "http://mxhserver.test",
+      "http://mxhclient.test",
+    ];
 export enum Role {
   USER = "user",
   PREMIUM = "premium",

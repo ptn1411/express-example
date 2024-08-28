@@ -118,16 +118,16 @@ function hidePhoneElement(phone: string) {
   };
 }
 export {
-  validateEmail,
-  hideEmailElement,
-  hidePhoneElement,
-  validatePassword,
-  removeKeyObject,
-  isNullOrUndefined,
-  isAnyNullOrUndefined,
   checkObjectMissingAnyKey,
-  removeOptionalKeys,
-  isEmptyObject,
   compareArrayToArray,
   dateNow,
+  hideEmailElement,
+  hidePhoneElement,
+  isAnyNullOrUndefined,
+  isEmptyObject,
+  isNullOrUndefined,
+  removeKeyObject,
+  removeOptionalKeys,
+  validateEmail,
+  validatePassword,
 };

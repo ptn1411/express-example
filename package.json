@@ -13,7 +13,8 @@
     "nodemon": "env-cmd -f .env.local nodemon -q build/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"yarn nodemon\"",
     "server:dev": "concurrently \"npx tsc --watch\" \"env-cmd -f .env.production yarn nodemon\"",
-    "entity": "typeorm entity:create src/entity/ex"
+    "entity": "typeorm entity:create src/entity/ex",
+    "web-push":"web-push generate-vapid-keys --json"
   },
   "keywords": [],
   "author": "",

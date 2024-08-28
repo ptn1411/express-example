@@ -1,17 +1,17 @@
-import { Request, Response, Router } from "express";
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { User } from "../entity/User";
-import { AppDataSource } from "../data-source";
-import { UserOnline } from "../entity/User-online";
-import { Device } from "../entity/Device";
 import { faker } from "@faker-js/faker";
-import ormjson from "ormjson";
-import { newFriends } from "../services/friend";
 import argon2 from "argon2";
-import { Post } from "../entity/Post";
+import { Request, Response, Router } from "express";
+import ormjson from "ormjson";
 import { v4 as uuidv4 } from "uuid";
-import redisClient from "../redis";
 import { KEY_PREFIX } from "../constants";
+import { AppDataSource } from "../data-source";
+import { Device } from "../entity/Device";
+import { Post } from "../entity/Post";
+import { User } from "../entity/User";
+import { UserOnline } from "../entity/User-online";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import redisClient from "../redis";
+import { newFriends } from "../services/friend";
 
 const router = Router();
 
@@ -146,10 +146,8 @@ router.get("/new", async (req: Request, res: Response) => {
     email: faker.internet.email(),
     birthday: String(faker.date.birthdate()),
     sex: faker.datatype.boolean(),
-    avatar:
-      "https://api.phamthanhnam.com/image/n/20230423-useravatar-1682214795690.png",
-    coverImage:
-      "https://api.phamthanhnam.com/image/n/20230423-backgroundlogin-1682214873268.png",
+    avatar: "https://i.imgur.com/rLpAsb4.png",
+    coverImage: "https://i.imgur.com/rLpAsb4.png",
     statusEmail: "confirmed",
   });
   await AppDataSource.manager.save(newUser);

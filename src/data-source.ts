@@ -1,23 +1,23 @@
-import "reflect-metadata";
 import path from "path";
-import { __prod__ } from "./constants";
+import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "./entity/User";
-import { Post } from "./entity/Post";
+import { __prod__ } from "./constants";
+import { ActiveConversationEntity } from "./entity/Active-conversation";
+import { Bookmark } from "./entity/Bookmark";
+import { Comment } from "./entity/Comment";
+import { ConversationEntity } from "./entity/Conversation";
+import { Device } from "./entity/Device";
+import { Friends } from "./entity/Friends";
 import { Image } from "./entity/Image";
 import { Like } from "./entity/Like";
-import { Comment } from "./entity/Comment";
-import { Bookmark } from "./entity/Bookmark";
-import { Friends } from "./entity/Friends";
-import { ActiveConversationEntity } from "./entity/Active-conversation";
-import { ConversationEntity } from "./entity/Conversation";
 import { MessageEntity } from "./entity/Message";
-import { UserOnline } from "./entity/User-online";
-import { Device } from "./entity/Device";
-import { ProfileUser } from "./entity/Profile-user";
-import { UserNotifications } from "./entity/UserNotifications";
 import { Notifications } from "./entity/Notifications";
+import { Post } from "./entity/Post";
+import { ProfileUser } from "./entity/Profile-user";
 import { Report } from "./entity/Report";
+import { User } from "./entity/User";
+import { UserOnline } from "./entity/User-online";
+import { UserNotifications } from "./entity/UserNotifications";
 
 export const AppDataSource = new DataSource({
   type: "mysql",

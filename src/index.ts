@@ -1,43 +1,43 @@
-import "reflect-metadata";
-import dotenv from "dotenv";
-dotenv.config();
-import express, { Express } from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+import express, { Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import "reflect-metadata";
+dotenv.config();
 
-import cookieParser from "cookie-parser";
 import compression from "compression";
-import router from "./routers/index";
+import cookieParser from "cookie-parser";
 import { AppDataSource } from "./data-source";
+import router from "./routers/index";
 
+import {
+  ApolloServerPluginLandingPageDisabled,
+  ApolloServerPluginLandingPageGraphQLPlayground,
+} from "apollo-server-core";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import { HelloResolver } from "./resolver/hello";
-import {
-  ApolloServerPluginLandingPageGraphQLPlayground,
-  ApolloServerPluginLandingPageDisabled,
-} from "apollo-server-core";
-import { UserResolver } from "./resolver/user";
+import { HelloResolver } from "./resolver/Hello";
+import { UserResolver } from "./resolver/User";
 
 import { Context } from "./types/Context";
 
 import { ORIGIN, __prod__ } from "./constants";
-import { PostResolver } from "./resolver/post";
+import { BookmarkResolver } from "./resolver/bookmark";
+import { CommentResolver } from "./resolver/comment";
 import { ImageResolver } from "./resolver/image";
 import { LikeResolver } from "./resolver/like";
-import { CommentResolver } from "./resolver/comment";
-import { BookmarkResolver } from "./resolver/bookmark";
+import { PostResolver } from "./resolver/post";
 
-import { FriendsResolver } from "./resolver/friends";
 import http from "http";
 import { Server as SocketIO } from "socket.io";
+import { FriendsResolver } from "./resolver/friends";
 
-import socket from "./routers/socket";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { socketMiddleware } from "./middleware/checkAuth";
 import { ProfileResolver } from "./resolver/profile";
+import socket from "./routers/socket";
 
 AppDataSource.initialize()
   .then(async () => {

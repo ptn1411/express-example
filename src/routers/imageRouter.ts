@@ -1,16 +1,16 @@
 import { Router } from "express";
-import multer, { FileFilterCallback, MulterError } from "multer";
-import sharp from "sharp";
-import removeVietNam from "../utils/removeVietnameseTones";
-import { Request, Response, NextFunction } from "express-serve-static-core";
-import { dateNow } from "../utils";
+import { NextFunction, Request, Response } from "express-serve-static-core";
 import { mkdirp } from "mkdirp";
-
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { Image } from "../entity/Image";
+import multer, { FileFilterCallback, MulterError } from "multer";
+import path from "path";
+import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
-import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
+import { Image } from "../entity/Image";
+import { User } from "../entity/User";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import { dateNow } from "../utils";
+import removeVietNam from "../utils/removeVietnameseTones";
 const pathFolderUpload = process.env.PATH_FOlDER_UPLOAD;
 const multerStorage = multer.memoryStorage();
 
@@ -267,7 +267,9 @@ router.get("/n/:uuid", (req: Request, res: Response) => {
     4
   )}/${uuid.slice(4, 6)}/${uuid}`;
 
-  res.sendFile(pathYearMonth);
+  const absolutePath = path.resolve(pathYearMonth);
+  console.log(absolutePath);
+  res.sendFile(absolutePath);
 });
 router.get("/u/:uuid", async (req: Request, res: Response) => {
   const uuid = req.params.uuid;
@@ -289,7 +291,7 @@ router.get("/u/:uuid", async (req: Request, res: Response) => {
       message: "not image",
     });
   }
-
-  return res.sendFile(existingImage?.path);
+  const absolutePath = path.resolve(existingImage?.path);
+  return res.sendFile(absolutePath);
 });
 export default router;

@@ -1,7 +1,7 @@
-import nodeMailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
-import Mail from "nodemailer/lib/mailer";
 import ejs from "ejs";
+import nodeMailer from "nodemailer";
+import Mail from "nodemailer/lib/mailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 import path from "path";
 const config: SMTPTransport.Options = {
   host: process.env.SENDER_EMAIL_HOST,
@@ -37,17 +37,18 @@ async function sendHtmlEmail(
 
     const html = (await ejs.renderFile(viewFile, data)) as string;
 
-    const email = await transporter.sendMail({
-      from: `Pham Thanh Nam ${process.env.SENDER_EMAIL_USERNAME}`,
-      subject: subject,
-      html: html,
-      ...options,
-    });
+    // const email = await transporter.sendMail({
+    //   from: `Pham Thanh Nam ${process.env.SENDER_EMAIL_USERNAME}`,
+    //   subject: subject,
+    //   html: html,
+    //   ...options,
+    // });
 
-    return email;
+    // return email;
+    return true;
   } catch (error) {
     console.error(error);
     return undefined;
   }
 }
-export { transporter, sendToMail, sendHtmlEmail };
+export { sendHtmlEmail, sendToMail, transporter };

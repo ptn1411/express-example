@@ -1,10 +1,10 @@
 import { Request, Response, Router } from "express";
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { Bookmark } from "../entity/Bookmark";
 import { AppDataSource } from "../data-source";
-import { Report } from "../entity/Report";
-import { newReportPostNotion } from "../services/new-notification";
+import { Bookmark } from "../entity/Bookmark";
 import { Post } from "../entity/Post";
+import { Report } from "../entity/Report";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import { newReportPostNotion } from "../services/new-notification";
 const router = Router();
 
 router.get(

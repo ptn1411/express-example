@@ -1,13 +1,12 @@
-import { Socket } from "socket.io";
 import { Request } from "express";
-import * as chat from "../services/chat";
+import { Socket } from "socket.io";
 import { MessageEntity } from "../entity/Message";
+import * as chat from "../services/chat";
 import { sendNotificationByUser } from "../services/notification";
 
+import { KEY_PREFIX } from "../constants";
 import redisClient from "../redis";
 import { listFriendOnline } from "../services/friend";
-import { KEY_PREFIX } from "../constants";
-import { censorText } from "../services/offensiveWords";
 import { MessageType } from "../types/Message";
 import eventEmitter from "../utils/eventManager";
 
@@ -58,7 +57,7 @@ export default function (io: Socket | any) {
     socket.on("sendMessage", async (newMessage: MessageEntity) => {
       if (!newMessage.conversation) return null;
       if (newMessage.type === MessageType.TEXT) {
-        newMessage.message = censorText(newMessage.message);
+        newMessage.message = newMessage.message;
       }
 
       const message = await chat.createMessage(newMessage);
