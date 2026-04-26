@@ -3,61 +3,34 @@ import { AppDataSource } from "../data-source";
 import { Friends } from "../entity/Friends";
 import { User } from "../entity/User";
 import redisClient from "../redis";
-export let getFriends = async (userId: string) => {
-  const existingFriends = await AppDataSource.getRepository(Friends).find({
-    where: [
-      {
-        creator: {
-          id: userId,
-        },
-        status: "accepted",
-      },
-      {
-        receiver: {
-          id: userId,
-        },
-        status: "accepted",
-      },
-    ],
-    relations: ["creator", "receiver"],
-  });
-  let userUuid: string[] = [];
-  existingFriends.forEach((friend) => {
-    if (friend.creator.id === userId) {
-      userUuid.push(friend.receiver.id);
-    } else if (friend.receiver.id === userId) {
-      userUuid.push(friend.creator.id);
-    }
-  });
-  return userUuid;
+const acceptedFriendQuery = (userId: string) => ({
+  where: [
+    { creator: { id: userId }, status: "accepted" },
+    { receiver: { id: userId }, status: "accepted" },
+  ] as const,
+  select: {
+    creator: { id: true, username: true },
+    receiver: { id: true, username: true },
+  },
+  relations: ["creator", "receiver"] as const,
+});
+
+export let getFriends = async (userId: string): Promise<string[]> => {
+  const friends = await AppDataSource.getRepository(Friends).find(
+    acceptedFriendQuery(userId)
+  );
+  return friends.map((f) =>
+    f.creator.id === userId ? f.receiver.id : f.creator.id
+  );
 };
-export let getUserNameFriends = async (userId: string) => {
-  const existingFriends = await AppDataSource.getRepository(Friends).find({
-    where: [
-      {
-        creator: {
-          id: userId,
-        },
-        status: "accepted",
-      },
-      {
-        receiver: {
-          id: userId,
-        },
-        status: "accepted",
-      },
-    ],
-    relations: ["creator", "receiver"],
-  });
-  let userName: string[] = [];
-  existingFriends.forEach((friend) => {
-    if (friend.creator.id === userId) {
-      userName.push(friend.receiver.username);
-    } else if (friend.receiver.id === userId) {
-      userName.push(friend.creator.username);
-    }
-  });
-  return userName;
+
+export let getUserNameFriends = async (userId: string): Promise<string[]> => {
+  const friends = await AppDataSource.getRepository(Friends).find(
+    acceptedFriendQuery(userId)
+  );
+  return friends.map((f) =>
+    f.creator.id === userId ? f.receiver.username : f.creator.username
+  );
 };
 
 export let listFriendOnline = async (userId: string) => {

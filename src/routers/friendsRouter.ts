@@ -202,28 +202,31 @@ router.put(
           message: `error`,
         });
       }
-      existingFriends.status = status;
-      await AppDataSource.manager.save(existingFriends);
-      await newFriendAccepted(
-        existingFriends.receiver,
-        existingFriends.creator
-      );
+      const existingFriendsWithUsers = await Friends.findOne({
+        where: { id: parseInt(friendRequestId) },
+        relations: ["creator", "receiver"],
+      });
+      if (!existingFriendsWithUsers) {
+        return res.json({ code: 404, success: false, message: `error` });
+      }
+      existingFriendsWithUsers.status = status;
+      await AppDataSource.manager.save(existingFriendsWithUsers);
+      if (status === "accepted") {
+        await newFriendAccepted(
+          existingFriendsWithUsers.receiver,
+          existingFriendsWithUsers.creator
+        );
+      }
       return res.json({
         code: 200,
         success: true,
         message: `success`,
-        ...existingFriends,
-        // id: existingFriends.id,
-        // creator: jsonP.removeKeyObject(existingFriends.creator, arrayKeyRemove),
-        // receiver: jsonP.removeKeyObject(
-        //   existingFriends.receiver,
-        //   arrayKeyRemove
-        // ),
-        // status: existingFriends.status,
+        id: existingFriendsWithUsers.id,
+        status: existingFriendsWithUsers.status,
+        creator: jsonP.removeKeyObject(existingFriendsWithUsers.creator, arrayKeyRemove),
+        receiver: jsonP.removeKeyObject(existingFriendsWithUsers.receiver, arrayKeyRemove),
       });
     } catch (error) {
-      console.log(error);
-
       return res.send({
         code: 500,
         success: false,

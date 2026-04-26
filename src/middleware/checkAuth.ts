@@ -170,19 +170,19 @@ export const checkApiAuthAccessToken = async (
   try {
     const authHeader = req.header("Authorization");
     if (!authHeader) {
-      return res.status(403).json({
-        code: 403,
+      return res.status(401).json({
+        code: 401,
         success: false,
-        message: "Access token provided!",
+        message: "Access token required",
       });
     }
     const accessToken = authHeader.split(" ")[1];
 
     if (!accessToken) {
-      return res.status(403).json({
-        code: 403,
+      return res.status(401).json({
+        code: 401,
         success: false,
-        message: "Access token provided!",
+        message: "Access token required",
       });
     }
     const decodedUser = await JwtVerifyAccessToken(accessToken as string);

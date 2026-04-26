@@ -55,8 +55,6 @@ router.post(
         id: Number(notionId),
       },
     });
-    console.log(notifications);
-
     if (!notifications) {
       return res.json({
         status: false,
