@@ -27,11 +27,11 @@ export class CommentResolver {
   ): Promise<CommentResponse> {
     try {
       const id = req.user?.id;
-      if (content.length <= 1) {
+      if (content.trim().length === 0) {
         return {
-          code: 404,
+          code: 400,
           success: false,
-          message: `sai react`,
+          message: `Comment content cannot be empty`,
         };
       }
 
@@ -109,11 +109,11 @@ export class CommentResolver {
   ): Promise<CommentResponse> {
     try {
       const id = req.user?.id;
-      if (content.length <= 0) {
+      if (content.trim().length === 0) {
         return {
-          code: 404,
+          code: 400,
           success: false,
-          message: `sai react`,
+          message: `Comment content cannot be empty`,
         };
       }
 
@@ -158,6 +158,31 @@ export class CommentResolver {
       };
     }
   }
+
+  @UseMiddleware(checkAccessToken)
+  @Mutation((_return) => CommentResponse)
+  async deleteComment(
+    @Arg("commentId") commentId: number,
+    @Ctx() { req }: Context
+  ): Promise<CommentResponse> {
+    try {
+      const comment = await Comment.findOne({
+        where: { id: commentId },
+        relations: { user: true },
+      });
+      if (!comment) {
+        return { code: 404, success: false, message: `Comment not found` };
+      }
+      if (comment.user.id !== req.user?.id) {
+        return { code: 403, success: false, message: `Not authorized to delete this comment` };
+      }
+      await comment.softRemove();
+      return { code: 200, success: true, message: `Comment deleted` };
+    } catch (error) {
+      return { code: 500, success: false };
+    }
+  }
+
   @Query((_return) => CommentResponse)
   async getCommentPost(
     @Arg("postUuid") postUuid: string
@@ -226,8 +251,6 @@ export class CommentResolver {
         comments: comment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

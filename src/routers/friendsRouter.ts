@@ -238,33 +238,23 @@ router.get(
   checkApiAuthAccessToken,
   async (req: Request, res: Response) => {
     const uuid = req.user?.id;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
 
     try {
-      const existingFriends = await AppDataSource.getRepository(Friends).find({
-        where: [
-          {
-            receiver: {
-              id: uuid,
-            },
-          },
-        ],
+      const [existingFriends, totalCount] = await AppDataSource.getRepository(Friends).findAndCount({
+        where: [{ receiver: { id: uuid }, status: "pending" }],
         select: {
-          creator: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatar: true,
-          },
-          receiver: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatar: true,
-          },
+          id: true,
+          creator: { id: true, username: true, fullName: true, avatar: true },
+          receiver: { id: true, username: true, fullName: true, avatar: true },
           status: true,
           createAt: true,
         },
         relations: ["creator", "receiver"],
+        order: { createAt: "DESC" },
+        take: limit,
+        skip: (page - 1) * limit,
       });
 
       return res.json({
@@ -272,6 +262,10 @@ router.get(
         success: true,
         message: `success`,
         data: existingFriends,
+        page,
+        limit,
+        totalCount,
+        hasNextPage: (page - 1) * limit + existingFriends.length < totalCount,
       });
     } catch (error) {
       return res.send({
@@ -283,55 +277,69 @@ router.get(
   }
 );
 
+router.delete(
+  "/cancel/:friendRequestId",
+  checkApiAuthAccessToken,
+  async (req: Request, res: Response) => {
+    const { friendRequestId } = req.params;
+    const uuid = req.user?.id;
+    try {
+      const existingFriend = await Friends.findOne({
+        where: { id: parseInt(friendRequestId) },
+        relations: ["creator", "receiver"],
+      });
+      if (!existingFriend) {
+        return res.json({ code: 404, success: false, message: `Not found` });
+      }
+      if (existingFriend.creator.id !== uuid && existingFriend.receiver.id !== uuid) {
+        return res.json({ code: 403, success: false, message: `Not authorized` });
+      }
+      await existingFriend.softRemove();
+      return res.json({ code: 200, success: true, message: `Friend request cancelled` });
+    } catch (error) {
+      return res.json({ code: 500, success: false, message: `error` });
+    }
+  }
+);
+
 router.get(
   "/my",
   checkApiAuthAccessToken,
   async (req: Request, res: Response) => {
     const uuid = req.user?.id;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
 
     try {
-      const existingFriends = await AppDataSource.getRepository(Friends).find({
+      const [existingFriends, totalCount] = await AppDataSource.getRepository(Friends).findAndCount({
         where: [
-          {
-            creator: {
-              id: uuid,
-            },
-            status: "accepted",
-          },
-          {
-            receiver: {
-              id: uuid,
-            },
-            status: "accepted",
-          },
+          { creator: { id: uuid }, status: "accepted" },
+          { receiver: { id: uuid }, status: "accepted" },
         ],
+        select: {
+          id: true,
+          creator: { id: true, username: true, fullName: true, avatar: true },
+          receiver: { id: true, username: true, fullName: true, avatar: true },
+        },
         relations: ["creator", "receiver"],
+        order: { createAt: "DESC" },
+        take: limit,
+        skip: (page - 1) * limit,
       });
-      let userUuid: string[] = [];
-      existingFriends.forEach((friend) => {
-        if (friend.creator.id === uuid) {
-          userUuid.push(friend.receiver.id);
-        } else if (friend.receiver.id === uuid) {
-          userUuid.push(friend.creator.id);
-        }
-      });
-      const existingUsers = await AppDataSource.getRepository(User).findByIds(
-        userUuid
+
+      const friends = existingFriends.map((f) =>
+        f.creator.id === uuid ? f.receiver : f.creator
       );
-      const userData: any[] = [];
-      existingUsers.forEach((user) => {
-        userData.push({
-          id: user.id,
-          username: user.username,
-          fullName: user.fullName,
-          avatar: user.avatar,
-        });
-      });
+
       return res.json({
         code: 200,
         success: true,
         message: `success`,
-        friends: userData,
+        friends,
+        page,
+        limit,
+        totalCount,
+        hasNextPage: (page - 1) * limit + friends.length < totalCount,
       });
     } catch (error) {
       return res.send({
