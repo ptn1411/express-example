@@ -305,6 +305,8 @@ export class PostResolver {
         };
       }
 
+      await existingPost.remove();
+
       return {
         code: 200,
         success: true,
