@@ -5,6 +5,7 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
   OneToOne,
   JoinColumn,
@@ -138,4 +139,7 @@ export class User extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

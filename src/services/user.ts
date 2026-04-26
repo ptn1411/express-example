@@ -10,7 +10,7 @@ export let isOnlineUserById = async (userId: string) => {
     const timeUpdateOnline = 300000;
     const dateNow = new Date();
     const dateOnline = new Date(existingUserOnline.updateAt);
-    const timeDiff = dateOnline.getTime() - dateNow.getTime();
+    const timeDiff = dateNow.getTime() - dateOnline.getTime();
 
     if (timeDiff < timeUpdateOnline) {
       return true;

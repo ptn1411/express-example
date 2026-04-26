@@ -55,7 +55,7 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
 
   if (
     registerInput.lastName.length <= 1 ||
-    hasProfanity(registerInput.username)
+    hasProfanity(registerInput.lastName)
   ) {
     return {
       message: "sai lastName",
@@ -69,7 +69,7 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
   }
   if (
     registerInput.firstName.length <= 1 ||
-    hasProfanity(registerInput.username)
+    hasProfanity(registerInput.firstName)
   ) {
     return {
       message: "sai firstName",

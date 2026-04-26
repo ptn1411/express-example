@@ -7,6 +7,7 @@ import { getFriends } from "./friend";
 import { Like } from "../entity/Like";
 import { Comment } from "../entity/Comment";
 import eventEmitter from "../utils/eventManager";
+import { In } from "typeorm";
 
 export let newPostNotion = async (user: User, post: Post) => {
   const newNotion = await Notifications.create({
@@ -15,7 +16,7 @@ export let newPostNotion = async (user: User, post: Post) => {
     url: `${process.env.FRONTEND_URL}/post/${post.uuid}`,
   });
   const listFriendId = await getFriends(user.id);
-  const users = await User.findByIds(listFriendId);
+  const users = await User.find({ where: { id: In(listFriendId) } });
   await newNotion.save();
   const newNotifications = users.map((value) => {
     const newUserNotion = UserNotifications.create({

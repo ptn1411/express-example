@@ -4,9 +4,11 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   PrimaryColumn,
   OneToMany,
+  Index,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
@@ -21,6 +23,7 @@ export class Post extends BaseEntity {
   @PrimaryColumn()
   uuid!: string;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.posts, { onDelete: "CASCADE" })
   user!: User;
 
@@ -64,4 +67,7 @@ export class Post extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

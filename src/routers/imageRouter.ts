@@ -29,7 +29,7 @@ const multerFilter = (
 };
 const upload = multer({
   storage: multerStorage,
-  fileFilter: multerFilter,
+  fileFilter: multerFilter as any,
 });
 
 const uploadFiles = upload.array("images", 10);
@@ -256,11 +256,15 @@ router.post(
 router.get("/n/:uuid", (req: Request, res: Response) => {
   const uuid = req.params.uuid;
   if (!uuid) {
-    res.json({
+    return res.json({
       status: false,
       code: 404,
       message: "not image",
     });
+  }
+  const SAFE_FILENAME_REGEX = /^[\d]{8}-[a-zA-Z0-9_-]+-\d+\.png$/;
+  if (!SAFE_FILENAME_REGEX.test(uuid)) {
+    return res.status(400).json({ status: false, code: 400, message: "Invalid image identifier" });
   }
   const pathYearMonth = `${pathFolderUpload}/uploads/images/${uuid.slice(
     0,
@@ -268,8 +272,7 @@ router.get("/n/:uuid", (req: Request, res: Response) => {
   )}/${uuid.slice(4, 6)}/${uuid}`;
 
   const absolutePath = path.resolve(pathYearMonth);
-  console.log(absolutePath);
-  res.sendFile(absolutePath);
+  return res.sendFile(absolutePath);
 });
 router.get("/u/:uuid", async (req: Request, res: Response) => {
   const uuid = req.params.uuid;

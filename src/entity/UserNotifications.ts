@@ -2,9 +2,11 @@ import {
   Entity,
   Column,
   BaseEntity,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
+  Index,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
 import { User } from "./User";
@@ -16,10 +18,12 @@ export class UserNotifications extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index()
   @ManyToOne((_type) => Notifications)
-  @JoinColumn() // this decorator is optional for @ManyToOne, but required for @OneToOne
+  @JoinColumn()
   notification!: Notifications;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.userNotifications, {
     onDelete: "CASCADE",
   })
@@ -28,4 +32,7 @@ export class UserNotifications extends BaseEntity {
   @Field()
   @Column()
   isRead!: boolean;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

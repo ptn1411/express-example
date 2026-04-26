@@ -36,6 +36,9 @@ router.post(
   checkApiAuthAccessToken,
   async (req: Request, res: Response) => {
     const notionId = req.params.id;
+    if (isNaN(Number(notionId))) {
+      return res.status(400).json({ status: false, code: 400, message: "Invalid notification id" });
+    }
     const userNotificationsRepository =
       AppDataSource.getRepository(UserNotifications);
     const notifications = await userNotificationsRepository.findOne({

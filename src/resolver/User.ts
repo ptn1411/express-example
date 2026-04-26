@@ -17,12 +17,14 @@ import {
   hidePhoneElement,
   removeKeyObject,
   validateEmail,
+  validatePassword,
 } from "../utils";
 import { Context } from "../types/Context";
 import {
   COOKIE_NAME,
   DAY_TIME,
   KEY_PREFIX,
+  LevelPassword,
   REFRESH_TOKEN_COOKIE_NAME,
 } from "../constants";
 import {
@@ -482,6 +484,9 @@ export class UserResolver {
         },
       });
       if (!existingUser) {
+        return false;
+      }
+      if (!validatePassword(LevelPassword.LOW, password)) {
         return false;
       }
       const hashPassword = await argon2.hash(password);

@@ -1,4 +1,4 @@
-import { Field, ObjectType } from "type-graphql";
+import { Field, Int, ObjectType } from "type-graphql";
 import { IMutationResponse } from "./MutationResponse";
 import { IPost } from "./Post";
 import { FieldError } from "./FieldError";
@@ -17,6 +17,12 @@ export class PostsQueryResponse implements IMutationResponse {
 
   @Field({ nullable: true })
   limit?: number;
+
+  @Field(() => Int, { nullable: true })
+  totalCount?: number;
+
+  @Field({ nullable: true })
+  hasNextPage?: boolean;
 
   @Field((_type) => [FieldError], { nullable: true })
   errors?: FieldError[];

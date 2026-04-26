@@ -3,8 +3,10 @@ import {
   Column,
   BaseEntity,
   CreateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   PrimaryColumn,
+  Index,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
@@ -16,6 +18,7 @@ export class Image extends BaseEntity {
   @PrimaryColumn()
   uuid!: string;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.images)
   user!: User;
 
@@ -33,4 +36,7 @@ export class Image extends BaseEntity {
     default: () => "CURRENT_TIMESTAMP(6)",
   })
   createAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

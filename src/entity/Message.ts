@@ -2,9 +2,11 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Index,
 } from "typeorm";
 import { ConversationEntity } from "./Conversation";
 import { User } from "./User";
@@ -18,9 +20,11 @@ export class MessageEntity extends BaseEntity {
   @Column()
   message!: string;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.messages)
   user!: User;
 
+  @Index()
   @ManyToOne(
     () => ConversationEntity,
     (conversationEntity) => conversationEntity.messages
@@ -35,4 +39,7 @@ export class MessageEntity extends BaseEntity {
     default: () => "CURRENT_TIMESTAMP(6)",
   })
   createdAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

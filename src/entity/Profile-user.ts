@@ -3,6 +3,7 @@ import {
   Column,
   Entity,
   UpdateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
   OneToOne,
 } from "typeorm";
@@ -46,4 +47,7 @@ export class ProfileUser extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

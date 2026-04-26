@@ -149,7 +149,7 @@ export class PostResolver {
         username: username,
       });
       page = page || 1;
-      limit = limit || 10;
+      limit = Math.min(limit || 10, 50);
       if (!user) {
         return {
           code: 404,
@@ -159,7 +159,7 @@ export class PostResolver {
       }
 
       const postRepository = await AppDataSource.getRepository(Post);
-      const posts = await postRepository.find({
+      const [posts, totalCount] = await postRepository.findAndCount({
         relations: {
           user: true,
           likes: {
@@ -180,19 +180,14 @@ export class PostResolver {
         take: limit,
         skip: (page - 1) * limit,
       });
-      if (!posts) {
-        return {
-          code: 404,
-          success: false,
-          message: `error`,
-        };
-      }
       return {
         code: 200,
         success: true,
         posts: posts,
         page: page,
         limit: limit,
+        totalCount,
+        hasNextPage: (page - 1) * limit + posts.length < totalCount,
       };
     } catch (error) {
       return {
@@ -290,18 +285,28 @@ export class PostResolver {
   }
   @Mutation((_return) => PostMutationResponse)
   @UseMiddleware(checkAccessToken)
-  async deletePost(@Arg("uuid") uuid: string): Promise<PostMutationResponse> {
+  async deletePost(
+    @Arg("uuid") uuid: string,
+    @Ctx() { req }: Context
+  ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
-        where: {
-          uuid,
-        },
+        where: { uuid },
+        relations: { user: true },
       });
       if (!existingPost) {
         return {
           code: 400,
           success: false,
           message: `khong co data`,
+        };
+      }
+
+      if (existingPost.user.id !== req.user?.id) {
+        return {
+          code: 403,
+          success: false,
+          message: `Not authorized to delete this post`,
         };
       }
 

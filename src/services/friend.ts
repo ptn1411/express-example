@@ -114,7 +114,7 @@ export let newFriends = async (creator: string, receiver: string) => {
   const friendRequest = await Friends.create({
     creator: existingUser,
     receiver: checkFriend,
-    status: "accepted",
+    status: "pending",
   });
   await AppDataSource.getRepository(Friends).save(friendRequest);
   return friendRequest;

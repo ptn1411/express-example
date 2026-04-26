@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express, { Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import rateLimit from "express-rate-limit";
 import "reflect-metadata";
 dotenv.config();
 
@@ -11,11 +12,10 @@ import cookieParser from "cookie-parser";
 import { AppDataSource } from "./data-source";
 import router from "./routers/index";
 
-import {
-  ApolloServerPluginLandingPageDisabled,
-  ApolloServerPluginLandingPageGraphQLPlayground,
-} from "apollo-server-core";
-import { ApolloServer } from "apollo-server-express";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
+import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolver/Hello";
 import { UserResolver } from "./resolver/User";
@@ -33,8 +33,6 @@ import http from "http";
 import { Server as SocketIO } from "socket.io";
 import { FriendsResolver } from "./resolver/friends";
 
-import { ParamsDictionary } from "express-serve-static-core";
-import { ParsedQs } from "qs";
 import { socketMiddleware } from "./middleware/checkAuth";
 import { ProfileResolver } from "./resolver/profile";
 import socket from "./routers/socket";
@@ -61,7 +59,22 @@ AppDataSource.initialize()
     app.set("trust proxy", 1);
     app.use(cookieParser());
 
-    const apolloServer = new ApolloServer({
+    const globalLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+    const authLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many requests, please try again later." },
+    });
+    app.use(globalLimiter);
+
+    const apolloServer = new ApolloServer<Pick<Context, "req" | "res">>({
       schema: await buildSchema({
         resolvers: [
           HelloResolver,
@@ -76,21 +89,28 @@ AppDataSource.initialize()
         ],
         validate: false,
       }),
-      context: ({ req, res }): Pick<Context, "req" | "res"> => ({ req, res }),
       plugins: [
         __prod__
           ? ApolloServerPluginLandingPageDisabled()
-          : ApolloServerPluginLandingPageGraphQLPlayground(),
+          : ApolloServerPluginLandingPageLocalDefault({ embed: true }),
       ],
     });
     await apolloServer.start();
-    apolloServer.applyMiddleware({
-      app,
-      cors: {
-        credentials: true,
-        origin: ORIGIN,
-      },
-    });
+
+    app.use("/graphql", authLimiter);
+    app.use("/refresh_token", authLimiter);
+    app.use(
+      "/graphql",
+      cors<cors.CorsRequest>({ credentials: true, origin: ORIGIN }),
+      express.json({ limit: "64mb" }),
+      expressMiddleware(apolloServer, {
+        context: async ({ req, res }: { req: any; res: any }): Promise<Pick<Context, "req" | "res">> => ({
+          req,
+          res,
+        }),
+      })
+    );
+
     app.use(
       helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false })
     );
@@ -99,24 +119,13 @@ AppDataSource.initialize()
         level: 6,
         threshold: 100 * 1000,
         filter: shouldCompress,
-      })
+      }) as any
     );
 
-    function shouldCompress(
-      req: express.Request<
-        ParamsDictionary,
-        any,
-        any,
-        ParsedQs,
-        Record<string, any>
-      >,
-      res: express.Response<any, Record<string, any>>
-    ) {
+    function shouldCompress(req: any, res: any) {
       if (req.headers["x-no-compression"]) {
-        // don't compress responses with this request header
         return false;
       }
-      // fallback to standard filter function
       return compression.filter(req, res);
     }
 

@@ -17,6 +17,8 @@ export let getPostsFromFriend = async (
     });
   });
 
+  if (arrayFriendsId.length === 0) return [];
+
   const postRepository = await AppDataSource.getRepository(Post);
 
   const posts = await postRepository.find({

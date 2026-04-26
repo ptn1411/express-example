@@ -96,7 +96,7 @@ router.post(
     if (!uuid) {
       return res.status(401).send("Unauthorized");
     }
-    const ip = req.ip;
+    const ip = req.ip ?? "unknown";
     const existingUser = await User.findOneBy({
       id: uuid,
     });
@@ -128,9 +128,9 @@ router.post(
     return res.send(ip);
   }
 );
-router.get("/new", async (req: Request, res: Response) => {
-  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
-    return res.status(401).send("Unauthorized");
+router.get("/new", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
   }
   const password = faker.internet.password();
   const username = faker.internet.userName();
@@ -165,9 +165,9 @@ router.get("/new", async (req: Request, res: Response) => {
     user: newUser,
   });
 });
-router.get("/friend", async (req: Request, res: Response) => {
-  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
-    return res.status(401).send("Unauthorized");
+router.get("/friend", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
   }
   const data = await dbUser().findAll();
   for (let i = 0; i < data.length; i++) {
@@ -185,9 +185,9 @@ router.get("/friend", async (req: Request, res: Response) => {
     data,
   });
 });
-router.get("/post", async (req: Request, res: Response) => {
-  if (req.query.auth != "7tbrBTVtUA795RKutQ") {
-    return res.status(401).send("Unauthorized");
+router.get("/post", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
   }
 
   const dataUser = await dbUser().findAll();
@@ -205,7 +205,7 @@ router.get("/post", async (req: Request, res: Response) => {
         newPost.images = [];
         newPost.content = faker.lorem.paragraph();
         newPost.shares = 0;
-        await await AppDataSource.manager.save(newPost);
+        await AppDataSource.manager.save(newPost);
       }
     }
   }

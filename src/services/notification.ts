@@ -16,7 +16,11 @@ export let sendNotification = async (
     title,
     message: body,
   });
-  webPush.sendNotification(subscription, payload);
+  try {
+    await webPush.sendNotification(subscription, payload);
+  } catch (error) {
+    console.error("Push notification failed:", error);
+  }
 };
 
 export let sendNotificationByUser = async (

@@ -9,6 +9,7 @@ import { FriendQueryResponse } from "../types/FriendQueryResponse";
 import { log } from "console";
 import { checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
+import { In } from "typeorm";
 
 @Resolver()
 export class FriendsResolver {
@@ -42,9 +43,9 @@ export class FriendsResolver {
           userUuid.push(friend.creator.id);
         }
       });
-      const existingUsers = await AppDataSource.getRepository(User).findByIds(
-        userUuid
-      );
+      const existingUsers = await AppDataSource.getRepository(User).find({
+        where: { id: In(userUuid) },
+      });
       return {
         code: 200,
         success: true,
@@ -81,9 +82,9 @@ export class FriendsResolver {
           userUuid.push(friend.creator.id);
         }
       });
-      const existingUsers = await AppDataSource.getRepository(User).findByIds(
-        userUuid
-      );
+      const existingUsers = await AppDataSource.getRepository(User).find({
+        where: { id: In(userUuid) },
+      });
       return {
         code: 200,
         success: true,

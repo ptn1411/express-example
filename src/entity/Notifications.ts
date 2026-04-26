@@ -3,6 +3,7 @@ import {
   Column,
   BaseEntity,
   CreateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
@@ -31,4 +32,7 @@ export class Notifications extends BaseEntity {
     default: () => "CURRENT_TIMESTAMP(6)",
   })
   createAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

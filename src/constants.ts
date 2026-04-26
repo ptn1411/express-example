@@ -7,21 +7,10 @@ export const KEY_PREFIX = __prod__ ? "prod" : "dev";
 export const REACTIONS_TYPE = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
 export const ORIGIN = __prod__
-  ? [
-      "http://localhost:3000",
-      "http://localhost:8080",
-      "https://mxhserver.test",
-      "https://mxhclient.test",
-      "http://mxhserver.test",
-      "http://mxhclient.test",
-    ]
+  ? ([process.env.FRONTEND_URL, process.env.URL_APP].filter(Boolean) as string[])
   : [
       "http://localhost:3000",
       "http://localhost:8080",
-      "https://mxhserver.test",
-      "https://mxhclient.test",
-      "http://mxhserver.test",
-      "http://mxhclient.test",
     ];
 export enum Role {
   USER = "user",

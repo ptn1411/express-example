@@ -42,7 +42,7 @@ router.post("/", async (req: Request, res: Response) => {
       accessToken: token.data,
     });
   } catch (error) {
-    return res.sendStatus(500).send({ message: "server" });
+    return res.status(500).json({ message: "server" });
   }
 });
 

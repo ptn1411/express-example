@@ -4,8 +4,9 @@ import {
   ManyToOne,
   JoinColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
-  
+  Index,
 } from "typeorm";
 import { User } from "./User";
 
@@ -14,10 +15,10 @@ export class UserOnline extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index()
   @ManyToOne((_type) => User)
   @JoinColumn()
   user!: User;
-
 
   @UpdateDateColumn({
     type: "timestamp",
@@ -25,4 +26,7 @@ export class UserOnline extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

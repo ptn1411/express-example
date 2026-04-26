@@ -37,15 +37,14 @@ async function sendHtmlEmail(
 
     const html = (await ejs.renderFile(viewFile, data)) as string;
 
-    // const email = await transporter.sendMail({
-    //   from: `Pham Thanh Nam ${process.env.SENDER_EMAIL_USERNAME}`,
-    //   subject: subject,
-    //   html: html,
-    //   ...options,
-    // });
+    const email = await transporter.sendMail({
+      from: `Pham Thanh Nam ${process.env.SENDER_EMAIL_USERNAME}`,
+      subject: subject,
+      html: html,
+      ...options,
+    });
 
-    // return email;
-    return true;
+    return email;
   } catch (error) {
     console.error(error);
     return undefined;
