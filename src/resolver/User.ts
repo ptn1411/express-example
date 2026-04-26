@@ -6,6 +6,7 @@ import {
   Resolver,
   UseMiddleware,
 } from "type-graphql";
+import { Not, In } from "typeorm";
 import { User } from "../entity/User";
 import argon2 from "argon2";
 import { UserMutationResponse } from "../types/UserMutationResponse";
@@ -399,23 +400,19 @@ export class UserResolver {
     try {
       const uuid = req.user?.id as string;
       const friendsId = await getFriends(uuid);
+      const excludeIds = [...friendsId, uuid];
 
-      const existingFriends = await User.find({
-        order: {
-          createAt: "DESC",
-        },
-      });
-      const existingFriendsId = existingFriends.filter((friend) => {
-        if (!friendsId.includes(friend.id)) {
-          return friend;
-        }
-        return;
+      const suggestions = await User.find({
+        select: { id: true, username: true, avatar: true, fullName: true },
+        where: { id: Not(In(excludeIds)) },
+        order: { createAt: "DESC" },
+        take: 20,
       });
 
       return {
         code: 200,
         success: true,
-        users: existingFriendsId,
+        users: suggestions,
       };
     } catch (error) {
       return {
