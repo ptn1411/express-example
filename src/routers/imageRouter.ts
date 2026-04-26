@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { NextFunction, Request, Response } from "express-serve-static-core";
+import rateLimit from "express-rate-limit";
 import { mkdirp } from "mkdirp";
 import multer, { FileFilterCallback, MulterError } from "multer";
 import path from "path";
@@ -11,6 +12,14 @@ import { User } from "../entity/User";
 import { checkApiAuthAccessToken } from "../middleware/checkAuth";
 import { dateNow } from "../utils";
 import removeVietNam from "../utils/removeVietnameseTones";
+
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many uploads, please try again later." },
+});
 const pathFolderUpload = process.env.PATH_FOlDER_UPLOAD;
 const multerStorage = multer.memoryStorage();
 
@@ -235,6 +244,7 @@ const getResult = async (req: Request, res: Response) => {
 router.post(
   "/avatar",
   checkApiAuthAccessToken,
+  uploadLimiter,
   uploadImages,
   resizeImagesAvatar,
   getResult
@@ -242,6 +252,7 @@ router.post(
 router.post(
   "/cover",
   checkApiAuthAccessToken,
+  uploadLimiter,
   uploadImages,
   resizeImagesCover,
   getResult
@@ -249,6 +260,7 @@ router.post(
 router.post(
   "/",
   checkApiAuthAccessToken,
+  uploadLimiter,
   uploadImages,
   resizeImages,
   getResult

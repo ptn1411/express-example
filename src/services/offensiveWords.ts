@@ -439,22 +439,24 @@ const offensiveWords = [
   "tiên sư bố",
   "tổ sư",
 ];
+const offensiveRegex = new RegExp(offensiveWords.join("|"), "gi");
+
 function censorText(text: string) {
-  const regex = new RegExp(offensiveWords.join("|"), "gi");
+  offensiveRegex.lastIndex = 0;
   let censoredText = "";
   let lastEndIndex = 0;
   let match;
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = offensiveRegex.exec(text)) !== null) {
     censoredText +=
       text.slice(lastEndIndex, match.index) + "*".repeat(match[0].length);
-    lastEndIndex = regex.lastIndex;
+    lastEndIndex = offensiveRegex.lastIndex;
   }
   censoredText += text.slice(lastEndIndex);
   return censoredText;
 }
 
 function hasProfanity(text: string) {
-  const regex = new RegExp(offensiveWords.join("|"), "gi");
-  return !!regex.test(text);
+  offensiveRegex.lastIndex = 0;
+  return offensiveRegex.test(text);
 }
 export { censorText, hasProfanity };

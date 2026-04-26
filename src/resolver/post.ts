@@ -120,6 +120,8 @@ export class PostResolver {
           message: `error`,
         };
       }
+      page = Math.max(page || 1, 1);
+      limit = Math.min(limit || 10, 50);
       const posts = await getPostsFromFriend(req.user?.id, page, limit);
 
       return {
@@ -250,21 +252,30 @@ export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
   @UseMiddleware(checkAccessToken)
   async updatePost(
-    @Arg("updatePostInput") { uuid, content, images }: UpdatePostInput
+    @Arg("updatePostInput") { uuid, content, images }: UpdatePostInput,
+    @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
-        where: {
-          uuid,
-        },
+        where: { uuid },
+        relations: { user: true },
       });
       if (!existingPost) {
         return {
           code: 400,
           success: false,
-          message: ` not ok`,
+          message: `not ok`,
         };
       }
+
+      if (existingPost.user.id !== req.user?.id) {
+        return {
+          code: 403,
+          success: false,
+          message: `Not authorized to update this post`,
+        };
+      }
+
       existingPost.content = content;
       existingPost.images = images;
 

@@ -87,8 +87,9 @@ AppDataSource.initialize()
           FriendsResolver,
           ProfileResolver,
         ],
-        validate: false,
+        validate: true,
       }),
+      introspection: !__prod__,
       plugins: [
         __prod__
           ? ApolloServerPluginLandingPageDisabled()
@@ -112,7 +113,18 @@ AppDataSource.initialize()
     );
 
     app.use(
-      helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false })
+      helmet({
+        crossOriginEmbedderPolicy: false,
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:", ...(process.env.URL_APP ? [process.env.URL_APP] : [])],
+            connectSrc: ["'self'", ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])],
+          },
+        },
+      })
     );
     app.use(
       compression({

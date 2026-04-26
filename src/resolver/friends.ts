@@ -20,20 +20,16 @@ export class FriendsResolver {
       const uuid = req.user?.id;
       const existingFriends = await AppDataSource.getRepository(Friends).find({
         where: [
-          {
-            creator: {
-              id: uuid,
-            },
-            status: "accepted",
-          },
-          {
-            receiver: {
-              id: uuid,
-            },
-            status: "accepted",
-          },
+          { creator: { id: uuid }, status: "accepted" },
+          { receiver: { id: uuid }, status: "accepted" },
         ],
         relations: ["creator", "receiver"],
+        select: {
+          id: true,
+          status: true,
+          creator: { id: true },
+          receiver: { id: true },
+        },
       });
       let userUuid: string[] = [];
       existingFriends.forEach((friend) => {
