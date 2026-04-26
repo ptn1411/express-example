@@ -43,7 +43,7 @@ const errorArray = [
   "LIMIT_UNEXPECTED_FILE",
 ];
 const uploadImages = (req: Request, res: Response, next: NextFunction) => {
-  uploadFiles(req, res, (err: any) => {
+  uploadFiles(req as any, res as any, (err: any) => {
     if (err instanceof MulterError) {
       if (errorArray.includes(err.code)) {
         return res.json({
