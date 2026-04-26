@@ -3,9 +3,11 @@ import {
   Column,
   BaseEntity,
   CreateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Index,
 } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
 import { User } from "./User";
@@ -19,15 +21,18 @@ export class Comment extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.comments, { onDelete: "CASCADE" })
   user!: User;
 
+  @Index()
   @ManyToOne(() => Post, (post) => post.comments, { onDelete: "CASCADE" })
   post?: Post;
 
   @OneToMany(() => Like, (like) => like.comment, { onDelete: "CASCADE" })
   likes!: Like[];
 
+  @Index()
   @ManyToOne(() => Comment, (comment) => comment.comments, {
     onDelete: "CASCADE",
   })
@@ -48,4 +53,7 @@ export class Comment extends BaseEntity {
     default: () => "CURRENT_TIMESTAMP(6)",
   })
   createAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

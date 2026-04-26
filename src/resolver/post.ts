@@ -10,7 +10,7 @@ import { PostMutationResponse } from "../types/PostMutationResponse";
 import { CreatePostInput } from "../types/CreatePostInput";
 import { Post } from "../entity/Post";
 import { UpdatePostInput } from "../types/UpdatePostInput";
-import { checkAuth } from "../middleware/checkAuth";
+import { checkAccessToken } from "../middleware/checkAuth";
 import { Context } from "../types/Context";
 import { AppDataSource } from "../data-source";
 import { v4 as uuidv4 } from "uuid";
@@ -18,11 +18,13 @@ import { User } from "../entity/User";
 
 import { PostQueryResponse } from "../types/PostQueryResponse";
 import { getPostsFromFriend } from "../services/post";
-
+import { PostsQueryResponse } from "../types/PostsQueryResponse";
+import { newPostNotion } from "../services/new-notification";
+import { censorText } from "../services/offensiveWords";
 @Resolver()
 export class PostResolver {
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async createPost(
     @Arg("createPostInput") { content, images }: CreatePostInput,
     @Ctx() { req }: Context
@@ -36,13 +38,15 @@ export class PostResolver {
         };
       }
       const uuid = uuidv4();
+      const newContent = await censorText(content);
       const newPost = await Post.create({
-        content,
+        content: newContent,
         images,
         uuid,
+        shares: 0,
       });
 
-      if (!req.session.userId) {
+      if (!req.user?.id) {
         return {
           code: 401,
           success: false,
@@ -50,7 +54,7 @@ export class PostResolver {
         };
       }
       const user = await User.findOneBy({
-        id: req.session.userId,
+        id: req.user.id,
       });
       if (!user) {
         return {
@@ -61,7 +65,7 @@ export class PostResolver {
       }
       newPost.user = user;
       await AppDataSource.manager.save(newPost);
-
+      await newPostNotion(user, newPost);
       return {
         code: 200,
         success: true,
@@ -76,10 +80,15 @@ export class PostResolver {
       };
     }
   }
-  @Query((_return) => PostQueryResponse)
-  async posts(@Ctx() { req }: Context): Promise<PostQueryResponse> {
+  @UseMiddleware(checkAccessToken)
+  @Query((_return) => PostsQueryResponse)
+  async posts(
+    @Ctx() { req }: Context,
+    @Arg("page") page: number,
+    @Arg("limit") limit: number
+  ): Promise<PostsQueryResponse> {
     try {
-      // const postRepository = await AppDataSource.getRepository(Post);
+      //const postRepository = await AppDataSource.getRepository(Post)
       // const posts = await postRepository.find({
       //   relations: {
       //     user: true,
@@ -103,23 +112,24 @@ export class PostResolver {
       // .leftJoinAndSelect("post.comments", "comment")
 
       // .getMany();
-      if (!req.session.userId) {
+
+      if (!req.user?.id) {
         return {
           code: 401,
           success: false,
           message: `error`,
         };
       }
-      const posts = await getPostsFromFriend(req.session.userId);
+      const posts = await getPostsFromFriend(req.user?.id, page, limit);
 
       return {
         code: 200,
         success: true,
         posts: posts,
+        page: page,
+        limit: limit,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -127,15 +137,19 @@ export class PostResolver {
       };
     }
   }
-  @Query((_return) => PostQueryResponse, { nullable: true })
-  @UseMiddleware(checkAuth)
+  @Query((_return) => PostsQueryResponse, { nullable: true })
+  @UseMiddleware(checkAccessToken)
   async getPostsUserByUserName(
-    @Arg("username") username: string
-  ): Promise<PostQueryResponse> {
+    @Arg("username") username: string,
+    @Arg("page") page: number,
+    @Arg("limit") limit: number
+  ): Promise<PostsQueryResponse> {
     try {
       const user = await User.findOneBy({
         username: username,
       });
+      page = page || 1;
+      limit = Math.min(limit || 10, 50);
       if (!user) {
         return {
           code: 404,
@@ -145,7 +159,7 @@ export class PostResolver {
       }
 
       const postRepository = await AppDataSource.getRepository(Post);
-      const posts = await postRepository.find({
+      const [posts, totalCount] = await postRepository.findAndCount({
         relations: {
           user: true,
           likes: {
@@ -155,26 +169,25 @@ export class PostResolver {
             user: true,
           },
         },
-        order: {
-          createAt: "DESC",
-        },
         where: {
           user: {
             id: user.id,
           },
         },
+        order: {
+          createAt: "ASC",
+        },
+        take: limit,
+        skip: (page - 1) * limit,
       });
-      if (!posts) {
-        return {
-          code: 404,
-          success: false,
-          message: `error`,
-        };
-      }
       return {
         code: 200,
         success: true,
         posts: posts,
+        page: page,
+        limit: limit,
+        totalCount,
+        hasNextPage: (page - 1) * limit + posts.length < totalCount,
       };
     } catch (error) {
       return {
@@ -184,19 +197,34 @@ export class PostResolver {
       };
     }
   }
+
   @Query((_return) => PostQueryResponse, { nullable: true })
-  @UseMiddleware(checkAuth)
   async post(@Arg("uuid") uuid: string): Promise<PostQueryResponse> {
     try {
       const postRepository = await AppDataSource.getRepository(Post);
-      const post = await postRepository
-        .createQueryBuilder("post")
-        .leftJoinAndSelect("post.user", "user")
-        .leftJoinAndSelect("post.likes", "like")
-        .leftJoinAndSelect("post.comments", "comment")
-        .where("post.uuid = :uuid", { uuid: uuid })
-
-        .getOne();
+      const post = await postRepository.findOne({
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+            likes: {
+              user: true,
+            },
+          },
+        },
+        where: {
+          uuid: uuid,
+        },
+      });
+      // .createQueryBuilder("post")
+      // .leftJoinAndSelect("post.user", "user")
+      // .leftJoinAndSelect("post.likes", "like")
+      // .leftJoinAndSelect("post.comments", "comment")
+      // .where("post.uuid = :uuid", { uuid: uuid })
+      //.getOne();
       if (!post) {
         return {
           code: 404,
@@ -204,7 +232,6 @@ export class PostResolver {
           message: `error`,
         };
       }
-      console.log(post);
 
       return {
         code: 200,
@@ -221,7 +248,7 @@ export class PostResolver {
   }
 
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
+  @UseMiddleware(checkAccessToken)
   async updatePost(
     @Arg("updatePostInput") { uuid, content, images }: UpdatePostInput
   ): Promise<PostMutationResponse> {
@@ -257,13 +284,15 @@ export class PostResolver {
     }
   }
   @Mutation((_return) => PostMutationResponse)
-  @UseMiddleware(checkAuth)
-  async deletePost(@Arg("uuid") uuid: string): Promise<PostMutationResponse> {
+  @UseMiddleware(checkAccessToken)
+  async deletePost(
+    @Arg("uuid") uuid: string,
+    @Ctx() { req }: Context
+  ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne({
-        where: {
-          uuid,
-        },
+        where: { uuid },
+        relations: { user: true },
       });
       if (!existingPost) {
         return {
@@ -272,6 +301,16 @@ export class PostResolver {
           message: `khong co data`,
         };
       }
+
+      if (existingPost.user.id !== req.user?.id) {
+        return {
+          code: 403,
+          success: false,
+          message: `Not authorized to delete this post`,
+        };
+      }
+
+      await existingPost.remove();
 
       return {
         code: 200,
@@ -285,5 +324,15 @@ export class PostResolver {
         message: `server ${error}`,
       };
     }
+  }
+  @Query((_return) => [String])
+  async getAllPostIds(): Promise<string[]> {
+    const posts = await Post.find({
+      select: {
+        uuid: true,
+      },
+      take: 20,
+    });
+    return posts.map((post) => post.uuid);
   }
 }

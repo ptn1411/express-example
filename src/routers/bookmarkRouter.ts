@@ -1,7 +1,10 @@
 import { Request, Response, Router } from "express";
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { Bookmark } from "../entity/Bookmark";
 import { AppDataSource } from "../data-source";
+import { Bookmark } from "../entity/Bookmark";
+import { Post } from "../entity/Post";
+import { Report } from "../entity/Report";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import { newReportPostNotion } from "../services/new-notification";
 const router = Router();
 
 router.get(
@@ -19,7 +22,7 @@ router.get(
       },
       where: {
         user: {
-          id: req.session.userId,
+          id: req.user?.id,
         },
       },
     });
@@ -58,7 +61,7 @@ router.get(
         uuid: uuid,
       },
       user: {
-        id: req.session.userId,
+        id: req.user?.id,
       },
     });
     if (!existingBookmark) {
@@ -75,5 +78,69 @@ router.get(
     });
   }
 );
+router.post(
+  "/report/:uuid",
+  checkApiAuthAccessToken,
+  async (req: Request, res: Response) => {
+    const uuid = req.params.uuid;
+    if (!uuid) {
+      return res.json({
+        status: false,
+        code: 404,
+        message: "not uuid",
+      });
+    }
+    if (!req.user) {
+      return res.json({
+        status: false,
+        code: 404,
+        message: "not user",
+      });
+    }
+    const existingReport = await Report.findOneBy({
+      post: {
+        uuid: uuid,
+      },
+      user: {
+        id: req.user?.id,
+      },
+    });
+    if (!existingReport) {
+      const newReport = await Report.create({
+        post: {
+          uuid: uuid,
+        },
+        user: {
+          id: req.user?.id,
+        },
+        status: "pending",
+      });
+      const existingPost = await Post.findOne({
+        where: {
+          uuid: uuid,
+        },
+      });
+      if (!existingPost) {
+        return res.json({
+          status: false,
+          code: 404,
+          message: "not uuid",
+        });
+      }
+      await newReportPostNotion(req.user, existingPost);
+      await newReport.save();
+      return res.json({
+        status: true,
+        code: 200,
+        report: newReport,
+      });
+    }
 
+    return res.json({
+      status: true,
+      code: 200,
+      report: existingReport,
+    });
+  }
+);
 export default router;

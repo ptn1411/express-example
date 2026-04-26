@@ -1,16 +1,17 @@
 import { Router } from "express";
-import multer, { FileFilterCallback, MulterError } from "multer";
-import sharp from "sharp";
-import removeVietNam from "../utils/removeVietnameseTones";
-import { Request, Response, NextFunction } from "express-serve-static-core";
-import { dateNow } from "../utils";
+import { NextFunction, Request, Response } from "express-serve-static-core";
 import { mkdirp } from "mkdirp";
+import multer, { FileFilterCallback, MulterError } from "multer";
 import path from "path";
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { Image } from "../entity/Image";
+import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
-import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
+import { Image } from "../entity/Image";
+import { User } from "../entity/User";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import { dateNow } from "../utils";
+import removeVietNam from "../utils/removeVietnameseTones";
+const pathFolderUpload = process.env.PATH_FOlDER_UPLOAD;
 const multerStorage = multer.memoryStorage();
 
 const router = Router();
@@ -28,7 +29,7 @@ const multerFilter = (
 };
 const upload = multer({
   storage: multerStorage,
-  fileFilter: multerFilter,
+  fileFilter: multerFilter as any,
 });
 
 const uploadFiles = upload.array("images", 10);
@@ -42,7 +43,7 @@ const errorArray = [
   "LIMIT_UNEXPECTED_FILE",
 ];
 const uploadImages = (req: Request, res: Response, next: NextFunction) => {
-  uploadFiles(req, res, (err: any) => {
+  uploadFiles(req as any, res as any, (err: any) => {
     if (err instanceof MulterError) {
       if (errorArray.includes(err.code)) {
         return res.json({
@@ -82,12 +83,15 @@ const resizeImages = async (
       const newFilename = `${
         dateNow().yearNoTiles
       }-${filenameRemoveVietNam}-${Date.now()}.png`;
-      const pathYearMonth = `uploads/images/${dateNow().yyyy}/${dateNow().mm}`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
       await mkdirp(pathYearMonth);
       await sharp(file.buffer)
         // .resize(640, 320)
         .toFormat("png")
-        .jpeg({ quality: 90 })
+        .png({ quality: 90 })
         .toFile(`${pathYearMonth}/${newFilename}`);
       const uuid = uuidv4();
       const newImage = await Image.create({
@@ -99,6 +103,109 @@ const resizeImages = async (
       });
       if (user) {
         newImage.user = user;
+        newImage.alt = user.fullName;
+        await AppDataSource.manager.save(newImage);
+        req.body.images.push(newFilename);
+      }
+    })
+  );
+  return next();
+};
+const resizeImagesAvatar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.files)
+    return res.json({
+      status: false,
+      code: 400,
+      message: "Not File",
+    });
+
+  req.body.images = [];
+
+  const files = req.files as unknown as Express.Multer.File[];
+  await Promise.all(
+    files.map(async (file: Express.Multer.File) => {
+      const filename = file.originalname.replace(/\..+$/, "");
+
+      const filenameRemoveVietNam = removeVietNam(filename).split(" ").join("");
+      const newFilename = `${
+        dateNow().yearNoTiles
+      }-${filenameRemoveVietNam}-${Date.now()}.png`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
+      await mkdirp(pathYearMonth);
+      await sharp(file.buffer)
+        .resize(200, 200)
+        .toFormat("png")
+        .png({ quality: 90 })
+        .toFile(`${pathYearMonth}/${newFilename}`);
+      const uuid = uuidv4();
+      const newImage = await Image.create({
+        uuid: uuid,
+        path: `${pathYearMonth}/${newFilename}`,
+      });
+      const user = await User.findOneBy({
+        id: req.user?.id,
+      });
+      if (user) {
+        newImage.user = user;
+        newImage.alt = user.fullName;
+        await AppDataSource.manager.save(newImage);
+        req.body.images.push(newFilename);
+      }
+    })
+  );
+  return next();
+};
+const resizeImagesCover = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.files)
+    return res.json({
+      status: false,
+      code: 400,
+      message: "Not File",
+    });
+
+  req.body.images = [];
+
+  const files = req.files as unknown as Express.Multer.File[];
+  await Promise.all(
+    files.map(async (file: Express.Multer.File) => {
+      const filename = file.originalname.replace(/\..+$/, "");
+
+      const filenameRemoveVietNam = removeVietNam(filename).split(" ").join("");
+      const newFilename = `${
+        dateNow().yearNoTiles
+      }-${filenameRemoveVietNam}-${Date.now()}.png`;
+
+      const pathYearMonth = `${pathFolderUpload}/uploads/images/${
+        dateNow().yyyy
+      }/${dateNow().mm}`;
+      await mkdirp(pathYearMonth);
+      await sharp(file.buffer)
+        .resize(1000, 300)
+        .toFormat("png")
+        .png({ quality: 90 })
+        .toFile(`${pathYearMonth}/${newFilename}`);
+      const uuid = uuidv4();
+      const newImage = await Image.create({
+        uuid: uuid,
+        path: `${pathYearMonth}/${newFilename}`,
+      });
+      const user = await User.findOneBy({
+        id: req.user?.id,
+      });
+      if (user) {
+        newImage.user = user;
+        newImage.alt = user.fullName;
         await AppDataSource.manager.save(newImage);
         req.body.images.push(newFilename);
       }
@@ -124,6 +231,21 @@ const getResult = async (req: Request, res: Response) => {
     images: images,
   });
 };
+
+router.post(
+  "/avatar",
+  checkApiAuthAccessToken,
+  uploadImages,
+  resizeImagesAvatar,
+  getResult
+);
+router.post(
+  "/cover",
+  checkApiAuthAccessToken,
+  uploadImages,
+  resizeImagesCover,
+  getResult
+);
 router.post(
   "/",
   checkApiAuthAccessToken,
@@ -140,21 +262,17 @@ router.get("/n/:uuid", (req: Request, res: Response) => {
       message: "not image",
     });
   }
-  const pathYearMonth = `../../uploads/images/${uuid.slice(0, 4)}/${uuid.slice(
-    4,
-    6
-  )}`;
+  const SAFE_FILENAME_REGEX = /^[\d]{8}-[a-zA-Z0-9_-]+-\d+\.png$/;
+  if (!SAFE_FILENAME_REGEX.test(uuid)) {
+    return res.status(400).json({ status: false, code: 400, message: "Invalid image identifier" });
+  }
+  const pathYearMonth = `${pathFolderUpload}/uploads/images/${uuid.slice(
+    0,
+    4
+  )}/${uuid.slice(4, 6)}/${uuid}`;
 
-  const options = {
-    root: path.join(__dirname, pathYearMonth),
-    dotfiles: "deny",
-    headers: {
-      "x-timestamp": Date.now(),
-      "x-sent": true,
-    },
-  };
-
-  return res.sendFile(uuid, options);
+  const absolutePath = path.resolve(pathYearMonth);
+  return res.sendFile(absolutePath);
 });
 router.get("/u/:uuid", async (req: Request, res: Response) => {
   const uuid = req.params.uuid;
@@ -176,17 +294,7 @@ router.get("/u/:uuid", async (req: Request, res: Response) => {
       message: "not image",
     });
   }
-  const fileName = existingImage?.path.slice(22) as string;
-  const options = {
-    root: path.join(__dirname, `../../${existingImage?.path.slice(0, 22)}`),
-    dotfiles: "deny",
-    headers: {
-      "x-timestamp": Date.now(),
-      "x-sent": true,
-      "x-alt": existingImage.alt,
-    },
-  };
-
-  return res.sendFile(fileName, options);
+  const absolutePath = path.resolve(existingImage?.path);
+  return res.sendFile(absolutePath);
 });
 export default router;

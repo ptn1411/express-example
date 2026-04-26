@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Email Confirmation</title>
+    <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .container {
+            width: 500px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin: 20px 0 0 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="https://phamthanhnam.com"><img
+                src="https://api.phamthanhnam.com/image/n/20230423-logo-1682242032133.png" class="logo"></a>
+        <h1>Email Confirmation</h1>
+        <p>Hi <%= data.fullName %>,</p>
+        <p>Thank you for creating an account on [social media platform name].</p>
+        <p>To confirm your email address, please click on the following link:</p>
+        <a href="<%= data.link %>">Confirm Email</a>
+        <p>This link will expire in 5 minutes.</p>
+        <p>If you have any questions, please contact us at [email address].</p>
+        <p>Thanks,</p>
+        <p>The Pham Thanh Nam Team</p>
+    </div>
+</body>
+
+</html>

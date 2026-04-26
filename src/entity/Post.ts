@@ -4,16 +4,18 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   PrimaryColumn,
   OneToMany,
+  Index,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
 import { Like } from "./Like";
 import { Comment } from "./Comment";
 import { Bookmark } from "./Bookmark";
-
+import { Report } from "./Report";
 @ObjectType()
 @Entity()
 export class Post extends BaseEntity {
@@ -21,6 +23,7 @@ export class Post extends BaseEntity {
   @PrimaryColumn()
   uuid!: string;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.posts, { onDelete: "CASCADE" })
   user!: User;
 
@@ -29,6 +32,9 @@ export class Post extends BaseEntity {
 
   @OneToMany(() => Like, (like) => like.post)
   likes!: Like[];
+
+  @OneToMany(() => Report, (report) => report.post)
+  report!: Report[];
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments!: Comment[];
@@ -61,4 +67,7 @@ export class Post extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

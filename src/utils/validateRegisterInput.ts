@@ -1,7 +1,10 @@
 import { validateEmail, validatePassword } from "./index";
 import { RegisterInput } from "../types/RegisterInput";
-
+import { LevelPassword } from "../constants";
+import { hasProfanity } from "../services/offensiveWords";
 export const validateRegisterInput = (registerInput: RegisterInput) => {
+ 
+
   if (!validateEmail(registerInput.email)) {
     return {
       message: "Sai email",
@@ -13,7 +16,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.username.length <= 5) {
+  if (
+    registerInput.username.length <= 5 ||
+    hasProfanity(registerInput.username)
+  ) {
     return {
       message: "sai username",
       errors: [
@@ -47,7 +53,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
     };
   }
 
-  if (registerInput.lastName.length <= 2) {
+  if (
+    registerInput.lastName.length <= 1 ||
+    hasProfanity(registerInput.lastName)
+  ) {
     return {
       message: "sai lastName",
       errors: [
@@ -58,7 +67,10 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (registerInput.firstName.length <= 2) {
+  if (
+    registerInput.firstName.length <= 1 ||
+    hasProfanity(registerInput.firstName)
+  ) {
     return {
       message: "sai firstName",
       errors: [
@@ -69,13 +81,13 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
       ],
     };
   }
-  if (!validatePassword(registerInput.password)) {
+  if (!validatePassword(LevelPassword.LOW, registerInput.password)) {
     return {
       message: "sai password",
       errors: [
         {
           field: "password",
-          message: "password phai co ky tu dawc biet 8 ky tu co in hoa",
+          message: "password phai co ky tu 6 ky tu co in hoa",
         },
       ],
     };

@@ -3,9 +3,11 @@ import {
   Entity,
   ManyToOne,
   UpdateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   Column,
+  Index,
 } from "typeorm";
 import { User } from "./User";
 
@@ -25,6 +27,7 @@ export class Device extends BaseEntity {
   })
   subscription!: string;
 
+  @Index()
   @ManyToOne(() => User, (user) => user.devices, { onDelete: "CASCADE" })
   user!: User;
 
@@ -40,4 +43,7 @@ export class Device extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

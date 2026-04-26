@@ -1,11 +1,23 @@
+import { faker } from "@faker-js/faker";
+import argon2 from "argon2";
 import { Request, Response, Router } from "express";
-import { checkApiAuthAccessToken } from "../middleware/checkAuth";
-import { User } from "../entity/User";
+import ormjson from "ormjson";
+import { v4 as uuidv4 } from "uuid";
+import { KEY_PREFIX } from "../constants";
 import { AppDataSource } from "../data-source";
-import { UserOnline } from "../entity/User-online";
 import { Device } from "../entity/Device";
+import { Post } from "../entity/Post";
+import { User } from "../entity/User";
+import { UserOnline } from "../entity/User-online";
+import { checkApiAuthAccessToken } from "../middleware/checkAuth";
+import redisClient from "../redis";
+import { newFriends } from "../services/friend";
 
 const router = Router();
+
+function dbUser() {
+  return new ormjson("userFake.json");
+}
 
 router.get(
   "/search",
@@ -39,30 +51,40 @@ router.put(
       return res.status(401).send("Unauthorized");
     }
 
-    const existingUserOnline = await UserOnline.findOneBy({
-      user: {
-        id: uuid,
-      },
-    });
+    try {
+      const existingUserOnline = await UserOnline.findOneBy({
+        user: {
+          id: uuid,
+        },
+      });
 
-    if (existingUserOnline) {
+      if (existingUserOnline) {
+        existingUserOnline.updateAt = new Date();
+        await AppDataSource.manager.save(existingUserOnline);
+        return res.json({
+          code: 200,
+          success: true,
+          lastOnline: existingUserOnline.updateAt,
+        });
+      }
+      const newUserOnline = await UserOnline.create({
+        user: {
+          id: uuid,
+        },
+      });
+      await redisClient.set(`${KEY_PREFIX}userid:${uuid}`, uuid);
+      await AppDataSource.manager.save(newUserOnline);
       return res.json({
         code: 200,
         success: true,
-        lastOnline: existingUserOnline.updateAt,
+        lastOnline: newUserOnline.updateAt,
+      });
+    } catch (error) {
+      return res.json({
+        code: 500,
+        success: false,
       });
     }
-    const newUserOnline = await UserOnline.create({
-      user: {
-        id: uuid,
-      },
-    });
-    await AppDataSource.manager.save(newUserOnline);
-    return res.json({
-      code: 200,
-      success: true,
-      lastOnline: newUserOnline.updateAt,
-    });
   }
 );
 router.post(
@@ -74,8 +96,13 @@ router.post(
     if (!uuid) {
       return res.status(401).send("Unauthorized");
     }
-    const ip = req.ip;
-
+    const ip = req.ip ?? "unknown";
+    const existingUser = await User.findOneBy({
+      id: uuid,
+    });
+    if (!existingUser) {
+      return res.status(404).send("Not found");
+    }
     const existingDevice = await Device.findOneBy({
       user: {
         id: uuid,
@@ -101,4 +128,90 @@ router.post(
     return res.send(ip);
   }
 );
+router.get("/new", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
+  }
+  const password = faker.internet.password();
+  const username = faker.internet.userName();
+  const hashPassword = await argon2.hash(password);
+
+  const newUser = User.create({
+    username,
+    password: hashPassword,
+    firstName: faker.name.firstName(),
+    lastName: faker.name.lastName(),
+    fullName: faker.name.fullName(),
+    phone: faker.phone.number(),
+    email: faker.internet.email(),
+    birthday: String(faker.date.birthdate()),
+    sex: faker.datatype.boolean(),
+    avatar: "https://i.imgur.com/rLpAsb4.png",
+    coverImage: "https://i.imgur.com/rLpAsb4.png",
+    statusEmail: "confirmed",
+  });
+  await AppDataSource.manager.save(newUser);
+  await dbUser()
+    .create({
+      id: newUser.id,
+      username,
+      password,
+      fullName: newUser.fullName,
+    })
+    .save();
+  return res.json({
+    code: 200,
+    success: true,
+    user: newUser,
+  });
+});
+router.get("/friend", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
+  }
+  const data = await dbUser().findAll();
+  for (let i = 0; i < data.length; i++) {
+    if (i < data.length - 5) {
+      await newFriends(data[i].id, data[i + 1].id);
+      await newFriends(data[i].id, data[i + 2].id);
+      await newFriends(data[i].id, data[i + 3].id);
+      await newFriends(data[i].id, data[i + 4].id);
+    }
+  }
+  // const friend = await newFriends(creator, receiver);
+  return res.json({
+    code: 200,
+    success: true,
+    data,
+  });
+});
+router.get("/post", async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_SEED_ROUTES !== "true") {
+    return res.status(404).send("Not Found");
+  }
+
+  const dataUser = await dbUser().findAll();
+
+  for (let i = 0; i < dataUser.length; i++) {
+    const user = await User.findOneBy({
+      id: dataUser[i].id,
+    });
+    if (user) {
+      for (let j = 0; j < 50; j++) {
+        const uuid = uuidv4();
+        const newPost = Post.create();
+        newPost.uuid = uuid;
+        newPost.user = user;
+        newPost.images = [];
+        newPost.content = faker.lorem.paragraph();
+        newPost.shares = 0;
+        await AppDataSource.manager.save(newPost);
+      }
+    }
+  }
+  return res.json({
+    code: 200,
+    success: true,
+  });
+});
 export default router;

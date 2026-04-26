@@ -1,4 +1,4 @@
-import { Arg, Ctx, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Query, Resolver, UseMiddleware } from "type-graphql";
 
 import { Context } from "../types/Context";
 import { ImageResponse } from "../types/ImageResponse";
@@ -6,8 +6,10 @@ import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { Image } from "../entity/Image";
 import { ImageLink } from "../types/ImageLink";
+import { checkAccessToken } from "../middleware/checkAuth";
 @Resolver()
 export class ImageResolver {
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => ImageResponse)
   async getListImageUser(
     @Arg("start") start: number,
@@ -15,7 +17,7 @@ export class ImageResolver {
     @Arg("date") date: string,
     @Ctx() { req }: Context
   ): Promise<ImageResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
 
     if (!id) {
       return {

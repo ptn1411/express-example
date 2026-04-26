@@ -1,17 +1,23 @@
-import { Arg, Ctx, Query, Mutation, Resolver } from "type-graphql";
-
+import {
+  Arg,
+  Ctx,
+  Query,
+  Mutation,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import { Context } from "../types/Context";
-
 import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
-
 import { Post } from "../entity/Post";
-
 import { Comment } from "../entity/Comment";
 import { CommentResponse } from "../types/CommentResponse";
+import { checkAccessToken } from "../middleware/checkAuth";
+import { newComment } from "../services/new-notification";
 
 @Resolver()
 export class CommentResolver {
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => CommentResponse)
   async commentPost(
     @Arg("content") content: string,
@@ -20,7 +26,7 @@ export class CommentResolver {
     @Ctx() { req }: Context
   ): Promise<CommentResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
       if (content.length <= 1) {
         return {
           code: 404,
@@ -28,7 +34,7 @@ export class CommentResolver {
           message: `sai react`,
         };
       }
-      
+
       const user = await User.findOneBy({
         id: id,
       });
@@ -40,8 +46,13 @@ export class CommentResolver {
         };
       }
 
-      const post = await Post.findOneBy({
-        uuid: postUuid,
+      const post = await Post.findOne({
+        where: {
+          uuid: postUuid,
+        },
+        relations: {
+          user: true,
+        },
       });
       if (!post) {
         return {
@@ -74,6 +85,7 @@ export class CommentResolver {
           },
         },
       });
+      await newComment(user, existingComment, post);
       return {
         code: 200,
         success: true,
@@ -81,14 +93,13 @@ export class CommentResolver {
         comments: postComments,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
       };
     }
   }
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => CommentResponse)
   async commentComment(
     @Arg("content") content: string,
@@ -97,8 +108,8 @@ export class CommentResolver {
     @Ctx() { req }: Context
   ): Promise<CommentResponse> {
     try {
-      const id = req.session.userId;
-      if (content.length > 0) {
+      const id = req.user?.id;
+      if (content.length <= 0) {
         return {
           code: 404,
           success: false,
@@ -141,8 +152,6 @@ export class CommentResolver {
         comment: existingComment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -176,8 +185,6 @@ export class CommentResolver {
         comments: comment,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -190,14 +197,22 @@ export class CommentResolver {
   ): Promise<CommentResponse> {
     try {
       const commentRepository = await AppDataSource.getRepository(Comment);
-      const comment = await commentRepository
-        .createQueryBuilder("comment")
-        .leftJoinAndSelect("comment.user", "user")
-        .leftJoinAndSelect("comment.like", "like")
-        .leftJoinAndSelect("comment.comment", "comment")
-        .where("comment.commentId = :commentId", { commentId: commentId })
-        .getMany();
-
+      const comment = await commentRepository.find({
+        where: {
+          comment: {
+            id: commentId,
+          },
+        },
+        relations: {
+          user: true,
+          likes: {
+            user: true,
+          },
+          comments: {
+            user: true,
+          },
+        },
+      });
       if (!comment) {
         return {
           code: 404,

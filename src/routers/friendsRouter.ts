@@ -5,6 +5,7 @@ import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { FriendRequest_Status } from "../types/Friends";
 import jsonP from "@ptndev/json";
+import { newFriend, newFriendAccepted } from "../services/new-notification";
 const router = Router();
 const arrayKeyRemove = [
   "password",
@@ -160,7 +161,7 @@ router.post(
         status: "pending",
       });
       await AppDataSource.getRepository(Friends).save(friendRequest);
-
+      await newFriend(existingUser, checkFriend);
       return res.json({
         code: 200,
         success: true,
@@ -203,7 +204,10 @@ router.put(
       }
       existingFriends.status = status;
       await AppDataSource.manager.save(existingFriends);
-
+      await newFriendAccepted(
+        existingFriends.receiver,
+        existingFriends.creator
+      );
       return res.json({
         code: 200,
         success: true,

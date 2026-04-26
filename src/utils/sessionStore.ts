@@ -89,7 +89,7 @@ class SessionStore extends Store {
       data: session,
       sid,
     });
-    callback;
+    if (callback) callback();
   }
 }
 export default SessionStore;

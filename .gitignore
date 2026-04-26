@@ -6,5 +6,6 @@
 /data
 /uploads
 /test
+/src/test
 .env.local
 .env.production

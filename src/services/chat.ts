@@ -1,9 +1,12 @@
+import { KEY_PREFIX } from "../constants";
 import { AppDataSource } from "../data-source";
 import { ActiveConversationEntity } from "../entity/Active-conversation";
 import { ConversationEntity } from "../entity/Conversation";
 import { MessageEntity } from "../entity/Message";
 import { User } from "../entity/User";
+import redisClient from "../redis";
 import { removeKeyObject } from "../utils";
+import { listFriendOnline } from "./friend";
 const arrayKeyRemove = [
   "password",
   "email",
@@ -194,6 +197,43 @@ export let getActiveUsers = async (conversationId: number) => {
   });
   return activeConversation;
 };
+
+export let getConversationUser = async (conversationId: number) => {
+  const existingConversation = await AppDataSource.getRepository(
+    ConversationEntity
+  ).findOne({
+    where: {
+      id: conversationId,
+    },
+    relations: {
+      users: true,
+    },
+    select: {
+      users: {
+        id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
+  });
+  return existingConversation;
+};
+export let getSocketIdByUuid = async (uuid: string) => {
+  const listUser = await listFriendOnline(uuid);
+  if (listUser === null) {
+    return null;
+  }
+
+  const keys = listUser.map((friend) => `${KEY_PREFIX}socketid:${friend}`);
+
+  if (keys.length === 0) {
+    return null;
+  }
+  const listOnline = await redisClient.mget(keys);
+
+  return listOnline.filter((x) => x) as string[];
+};
 export let createMessage = async (message: MessageEntity) => {
   const existingUser = await User.findOne({
     where: {
@@ -226,7 +266,7 @@ export let getMessages = async (conversationId: number) => {
       user: true,
     },
     order: {
-      createdAt: "ASC",
+      createdAt: "DESC",
     },
     select: {
       user: {
@@ -236,6 +276,7 @@ export let getMessages = async (conversationId: number) => {
         fullName: true,
       },
     },
+    take: 20,
   });
   // .createQueryBuilder("message")
   // .leftJoinAndSelect("message.user", "user")
@@ -244,6 +285,7 @@ export let getMessages = async (conversationId: number) => {
 
   // .getMany();
 };
+
 export let removeActiveConversations = async () => {
   return await AppDataSource.getRepository(ActiveConversationEntity)
     .createQueryBuilder()

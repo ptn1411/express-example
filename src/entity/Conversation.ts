@@ -5,6 +5,7 @@ import {
   ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   BaseEntity,
 } from "typeorm";
 import { MessageEntity } from "./Message";
@@ -28,4 +29,7 @@ export class ConversationEntity extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   lastUpdated!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

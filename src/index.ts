@@ -1,38 +1,40 @@
-import "reflect-metadata";
-import dotenv from "dotenv";
-dotenv.config({ path: `../.env.${process.env.NODE_ENV}` })
-import express, { Express } from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+import express, { Express } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import session from "express-session";
-import cookieParser from "cookie-parser";
-import router from "./routers/index";
-import { AppDataSource } from "./data-source";
+import rateLimit from "express-rate-limit";
+import "reflect-metadata";
+dotenv.config();
 
-import { ApolloServer } from "apollo-server-express";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import { AppDataSource } from "./data-source";
+import router from "./routers/index";
+
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
+import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 import { buildSchema } from "type-graphql";
-import { HelloResolver } from "./resolver/hello";
-import {
-  ApolloServerPluginLandingPageGraphQLPlayground,
-  ApolloServerPluginLandingPageDisabled,
-} from "apollo-server-core";
-import { UserResolver } from "./resolver/user";
+import { HelloResolver } from "./resolver/Hello";
+import { UserResolver } from "./resolver/User";
 
 import { Context } from "./types/Context";
-import RedisStore from "connect-redis";
-import { createClient } from "redis";
-import { COOKIE_NAME, ORIGIN, SESSION_MAX_AGE, __prod__ } from "./constants";
-import { PostResolver } from "./resolver/post";
+
+import { ORIGIN, __prod__ } from "./constants";
+import { BookmarkResolver } from "./resolver/bookmark";
+import { CommentResolver } from "./resolver/comment";
 import { ImageResolver } from "./resolver/image";
 import { LikeResolver } from "./resolver/like";
-import { CommentResolver } from "./resolver/comment";
-import { BookmarkResolver } from "./resolver/bookmark";
+import { PostResolver } from "./resolver/post";
 
-import { FriendsResolver } from "./resolver/friends";
 import http from "http";
 import { Server as SocketIO } from "socket.io";
+import { FriendsResolver } from "./resolver/friends";
 
+import { socketMiddleware } from "./middleware/checkAuth";
+import { ProfileResolver } from "./resolver/profile";
 import socket from "./routers/socket";
 
 AppDataSource.initialize()
@@ -40,24 +42,9 @@ AppDataSource.initialize()
     const app: Express = express();
     const server = new http.Server(app);
     const port = process.env.PORT;
-    let redisClient = createClient({
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: 6379,
-      },
-      password: process.env.REDIS_PASSWORD,
-    });
-    redisClient.connect().catch(console.error);
 
-    // Initialize store.
-    let redisStore = new RedisStore({
-      client: redisClient,
-      prefix: `${COOKIE_NAME}:`,
-      ttl: SESSION_MAX_AGE,
-    });
-
-    app.use(express.json({ limit: "50mb" }));
-    app.use(express.urlencoded({ limit: "50mb", extended: true }));
+    app.use(express.json({ limit: "64mb" }));
+    app.use(express.urlencoded({ limit: "64mb", extended: true }));
 
     app.use(
       cors({
@@ -71,23 +58,23 @@ AppDataSource.initialize()
     app.use(morgan("dev"));
     app.set("trust proxy", 1);
     app.use(cookieParser());
-    const sessionMiddleware = session({
-      name: COOKIE_NAME,
-      store: redisStore,
-      secret: process.env.SECRET_SESSION_KEY as string,
-      cookie: {
-        maxAge: SESSION_MAX_AGE,
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      },
-      resave: false,
-      saveUninitialized: false,
-    });
-    app.use(sessionMiddleware);
 
-    const apolloServer = new ApolloServer({
+    const globalLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+    const authLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many requests, please try again later." },
+    });
+    app.use(globalLimiter);
+
+    const apolloServer = new ApolloServer<Pick<Context, "req" | "res">>({
       schema: await buildSchema({
         resolvers: [
           HelloResolver,
@@ -98,42 +85,62 @@ AppDataSource.initialize()
           CommentResolver,
           BookmarkResolver,
           FriendsResolver,
+          ProfileResolver,
         ],
         validate: false,
       }),
-      context: ({ req, res }): Pick<Context, "req" | "res"> => ({ req, res }),
       plugins: [
         __prod__
           ? ApolloServerPluginLandingPageDisabled()
-          : ApolloServerPluginLandingPageGraphQLPlayground(),
+          : ApolloServerPluginLandingPageLocalDefault({ embed: true }),
       ],
     });
     await apolloServer.start();
-    apolloServer.applyMiddleware({
-      app,
-      cors: {
-        credentials: true,
-        origin: ORIGIN,
-      },
-    });
+
+    app.use("/graphql", authLimiter);
+    app.use("/refresh_token", authLimiter);
+    app.use(
+      "/graphql",
+      cors<cors.CorsRequest>({ credentials: true, origin: ORIGIN }),
+      express.json({ limit: "64mb" }),
+      expressMiddleware(apolloServer, {
+        context: async ({ req, res }: { req: any; res: any }): Promise<Pick<Context, "req" | "res">> => ({
+          req,
+          res,
+        }),
+      })
+    );
+
     app.use(
       helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false })
     );
+    app.use(
+      compression({
+        level: 6,
+        threshold: 100 * 1000,
+        filter: shouldCompress,
+      }) as any
+    );
+
+    function shouldCompress(req: any, res: any) {
+      if (req.headers["x-no-compression"]) {
+        return false;
+      }
+      return compression.filter(req, res);
+    }
 
     app.use("/", router);
 
     const io = new SocketIO(server, {
       cors: {
-        origin: "http://localhost:3000",
+        origin: ORIGIN,
         credentials: true,
       },
     });
 
     io.engine.use(helmet());
     io.use((socket, next) => {
-      let req = socket.request as express.Request;
-      let res = {} as express.Response;
-      sessionMiddleware(req, res, next as express.NextFunction);
+      socketMiddleware(socket, next);
     });
     socket(io);
 

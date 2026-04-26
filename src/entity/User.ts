@@ -5,7 +5,10 @@ import {
   BaseEntity,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { Post } from "./Post";
@@ -17,7 +20,10 @@ import { Friends } from "./Friends";
 import { Role } from "../constants";
 import { MessageEntity } from "./Message";
 import { Device } from "./Device";
-
+import { ProfileUser } from "./Profile-user";
+import { User_Status_Email } from "../types/User";
+import { UserNotifications } from "./UserNotifications";
+import { Report } from "./Report";
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
@@ -34,7 +40,7 @@ export class User extends BaseEntity {
   email!: string;
 
   @Field()
-  @Column({ unique: true })
+  @Column()
   phone!: string;
 
   @Column()
@@ -80,11 +86,17 @@ export class User extends BaseEntity {
   @OneToMany(() => Like, (like) => like.user)
   likes!: Like[];
 
+  @OneToMany(() => Report, (report) => report.user)
+  report!: Report[];
+
   @OneToMany(() => Bookmark, (bookmark) => bookmark.user)
   bookmarks!: Bookmark[];
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments!: Comment[];
+
+  @OneToMany(() => UserNotifications, (notification) => notification.user)
+  userNotifications!: UserNotifications[];
 
   @OneToMany(
     () => Friends,
@@ -105,6 +117,14 @@ export class User extends BaseEntity {
   @OneToMany(() => MessageEntity, (messageEntity) => messageEntity.user)
   messages!: MessageEntity[];
 
+  @OneToOne(() => ProfileUser, (profile) => profile.user)
+  @JoinColumn()
+  profile!: ProfileUser;
+
+  @Field()
+  @Column()
+  statusEmail!: User_Status_Email;
+
   @Field()
   @CreateDateColumn({
     type: "timestamp",
@@ -119,4 +139,7 @@ export class User extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP(6)",
   })
   updateAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }

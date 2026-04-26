@@ -1,4 +1,11 @@
-import { Arg, Ctx, Query, Mutation, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Query,
+  Mutation,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 
 import { Context } from "../types/Context";
 
@@ -10,9 +17,12 @@ import { REACTIONS_TYPE } from "../constants";
 import { Post } from "../entity/Post";
 import { LikeResponse } from "../types/LikeResponse";
 import { Comment } from "../entity/Comment";
+import { checkAccessToken } from "../middleware/checkAuth";
+import { newLike } from "../services/new-notification";
 
 @Resolver()
 export class LikeResolver {
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => LikeResponse)
   async likePost(
     @Arg("typeReact") typeReact: string,
@@ -20,7 +30,7 @@ export class LikeResolver {
 
     @Ctx() { req }: Context
   ): Promise<LikeResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
     if (!REACTIONS_TYPE.includes(typeReact)) {
       return {
         code: 404,
@@ -40,8 +50,13 @@ export class LikeResolver {
       };
     }
 
-    const post = await Post.findOneBy({
-      uuid: postUuid,
+    const post = await Post.findOne({
+      where: {
+        uuid: postUuid,
+      },
+      relations: {
+        user: true,
+      },
     });
     if (!post) {
       return {
@@ -68,6 +83,7 @@ export class LikeResolver {
       }
       like.reactions = typeReact;
       await AppDataSource.manager.save(like);
+      await newLike(user, post, like);
       return {
         code: 200,
         success: true,
@@ -80,13 +96,16 @@ export class LikeResolver {
     });
     existingLike.user = user;
     existingLike.post = post;
-    await AppDataSource.manager.save(existingLike);
+    await existingLike.save();
+
+    await newLike(user, post, existingLike);
     return {
       code: 200,
       success: true,
       like: existingLike,
     };
   }
+  @UseMiddleware(checkAccessToken)
   @Mutation((_return) => LikeResponse)
   async likeComment(
     @Arg("typeReact") typeReact: string,
@@ -94,7 +113,7 @@ export class LikeResolver {
 
     @Ctx() { req }: Context
   ): Promise<LikeResponse> {
-    const id = req.session.userId;
+    const id = req.user?.id;
     if (!REACTIONS_TYPE.includes(typeReact)) {
       return {
         code: 404,
@@ -149,6 +168,7 @@ export class LikeResolver {
     });
     existingLike.user = user;
     existingLike.comment = comment;
+
     await AppDataSource.manager.save(existingLike);
     return {
       code: 200,
@@ -176,7 +196,6 @@ export class LikeResolver {
           message: `error`,
         };
       }
-      console.log(likes);
 
       return {
         code: 200,
@@ -184,8 +203,6 @@ export class LikeResolver {
         likes: likes,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -215,8 +232,6 @@ export class LikeResolver {
         likes: likes,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,

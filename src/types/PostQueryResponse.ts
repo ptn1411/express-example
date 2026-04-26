@@ -14,7 +14,7 @@ export class PostQueryResponse implements IMutationResponse {
 
   @Field((_type) => [IPost], { nullable: true })
   posts?: IPost[];
-
+  
   @Field((_type) => [FieldError], { nullable: true })
   errors?: FieldError[];
 }

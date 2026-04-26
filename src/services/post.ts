@@ -2,9 +2,25 @@ import { AppDataSource } from "../data-source";
 import { Post } from "../entity/Post";
 import { getFriends } from "./friend";
 
-export let getPostsFromFriend = async (userId: string) => {
+export let getPostsFromFriend = async (
+  userId: string,
+  page = 1,
+  limit = 10
+) => {
   const friendsId = await getFriends(userId);
+  const arrayFriendsId: any = [];
+  friendsId.map((friend) => {
+    arrayFriendsId.push({
+      user: {
+        id: friend,
+      },
+    });
+  });
+
+  if (arrayFriendsId.length === 0) return [];
+
   const postRepository = await AppDataSource.getRepository(Post);
+
   const posts = await postRepository.find({
     relations: {
       user: true,
@@ -13,18 +29,18 @@ export let getPostsFromFriend = async (userId: string) => {
       },
       comments: {
         user: true,
+        likes: {
+          user: true,
+        },
       },
     },
     order: {
-      createAt: "DESC",
+      createAt: "ASC",
     },
+    where: [...arrayFriendsId],
+    take: limit,
+    skip: (page - 1) * limit,
   });
 
-  const postsData: any = [];
-  posts.forEach((post) => {
-    if (friendsId.includes(post.user.id)) {
-      postsData.push(post);
-    }
-  });
-  return postsData;
+  return posts;
 };

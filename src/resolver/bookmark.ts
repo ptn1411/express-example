@@ -1,20 +1,22 @@
-import { Arg, Ctx, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Query, Resolver, UseMiddleware } from "type-graphql";
 import { Context } from "../types/Context";
 import { AppDataSource } from "../data-source";
 import { Bookmark } from "../entity/Bookmark";
 import { BookmarkResponse } from "../types/BookmarkResponse";
 import { User } from "../entity/User";
 import { Post } from "../entity/Post";
+import { checkAccessToken } from "../middleware/checkAuth";
 
 @Resolver()
 export class BookmarkResolver {
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => BookmarkResponse)
   async createBookmark(
     @Ctx() { req }: Context,
     @Arg("postUuid") postUuid: string
   ): Promise<BookmarkResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
 
       const user = await User.findOneBy({
         id: id,
@@ -71,7 +73,6 @@ export class BookmarkResolver {
       bookmark.user = user;
       bookmark.post = post;
       await AppDataSource.manager.save(bookmark);
-      console.log(bookmark);
 
       return {
         code: 200,
@@ -80,18 +81,17 @@ export class BookmarkResolver {
         bookmarks: [bookmark],
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
       };
     }
   }
+  @UseMiddleware(checkAccessToken)
   @Query((_return) => BookmarkResponse)
   async bookmarkAll(@Ctx() { req }: Context): Promise<BookmarkResponse> {
     try {
-      const id = req.session.userId;
+      const id = req.user?.id;
 
       if (!id) {
         return {
@@ -129,7 +129,6 @@ export class BookmarkResolver {
             id: user.id,
           },
         },
-     
       });
       if (!bookmarks) {
         return {
@@ -145,8 +144,6 @@ export class BookmarkResolver {
         bookmarks: bookmarks,
       };
     } catch (error) {
-      console.log(error);
-
       return {
         code: 500,
         success: false,
