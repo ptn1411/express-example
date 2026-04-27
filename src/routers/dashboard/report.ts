@@ -100,6 +100,71 @@ router.get("/posts", async (req: Request, res: Response) => {
   }
 });
 
+// Xem tất cả người đã báo cáo 1 bài viết cụ thể
+router.get("/post/:postId", async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const status = req.query.status as string | undefined;
+
+  try {
+    const post = await Post.findOne({
+      where: { uuid: postId },
+      select: {
+        uuid: true,
+        content: true,
+        images: true,
+        shares: true,
+        createAt: true,
+        user: { id: true, username: true, fullName: true, avatar: true },
+      },
+      relations: ["user"],
+    });
+
+    if (!post) {
+      return res.status(404).json({ code: 404, success: false, message: "Post not found" });
+    }
+
+    const whereClause: Record<string, unknown> = { post: { uuid: postId } };
+    if (status && VALID_STATUSES.includes(status)) {
+      whereClause.status = status;
+    }
+
+    const [[reports, totalCount], pending, resolved, rejected] = await Promise.all([
+      AppDataSource.getRepository(Report).findAndCount({
+        where: whereClause as any,
+        select: {
+          id: true,
+          status: true,
+          createAt: true,
+          user: { id: true, username: true, fullName: true, avatar: true },
+        },
+        relations: ["user"],
+        order: { createAt: "DESC" },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      AppDataSource.getRepository(Report).count({ where: { post: { uuid: postId }, status: "pending" } }),
+      AppDataSource.getRepository(Report).count({ where: { post: { uuid: postId }, status: "resolved" } }),
+      AppDataSource.getRepository(Report).count({ where: { post: { uuid: postId }, status: "rejected" } }),
+    ]);
+
+    return res.json({
+      code: 200,
+      success: true,
+      post,
+      reporters: reports,
+      summary: { total: pending + resolved + rejected, pending, resolved, rejected },
+      page,
+      limit,
+      totalCount,
+      hasNextPage: (page - 1) * limit + reports.length < totalCount,
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, success: false, message: "Server error" });
+  }
+});
+
 // Chi tiết 1 report — đầy đủ thông tin bài viết (ảnh, tác giả) + người báo cáo
 router.get("/:id", async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
