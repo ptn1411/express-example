@@ -98,10 +98,24 @@ function escapeRegex(word: string): string {
   return word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Vietnamese + ASCII alphanumeric — used for word-boundary simulation via lookahead/lookbehind.
+// Standard \b doesn't work for Vietnamese because diacritics aren't \w chars.
+const VN_CHARS =
+  "a-zA-Z0-9đĐáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ";
+const BEFORE = `(?<![${VN_CHARS}])`;
+const AFTER = `(?![${VN_CHARS}])`;
+
 function buildRegex(words: string[]): RegExp {
-  // Deduplicate and sort longest-first so longer phrases match before substrings
+  // Deduplicate and sort longest-first so multi-word phrases match before substrings
   const unique = [...new Set(words)].sort((a, b) => b.length - a.length);
-  return new RegExp(unique.map(escapeRegex).join("|"), "gi");
+  const patterns = unique.map((word) => {
+    const escaped = escapeRegex(word);
+    // Single-word entries (no spaces) get Vietnamese-aware boundaries to prevent
+    // false positives: "ngu" ≠ "Nguyễn", "ml" ≠ "100ml", "cl" ≠ "class".
+    // Multi-word phrases already match precisely enough without extra boundaries.
+    return word.includes(" ") ? escaped : `${BEFORE}${escaped}${AFTER}`;
+  });
+  return new RegExp(patterns.join("|"), "gi");
 }
 
 // Normalize text to catch common bypass attempts before checking
