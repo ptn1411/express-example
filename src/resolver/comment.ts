@@ -14,6 +14,7 @@ import { Comment } from "../entity/Comment";
 import { CommentResponse } from "../types/CommentResponse";
 import { checkAccessToken } from "../middleware/checkAuth";
 import { newComment } from "../services/new-notification";
+import { censorText } from "../services/offensiveWords";
 
 @Resolver()
 export class CommentResolver {
@@ -63,7 +64,7 @@ export class CommentResolver {
       }
 
       const existingComment = await Comment.create({
-        content: content,
+        content: censorText(content),
       });
 
       existingComment.user = user;
@@ -140,7 +141,7 @@ export class CommentResolver {
       }
 
       const existingComment = await Comment.create({
-        content: content,
+        content: censorText(content),
       });
 
       existingComment.user = user;
