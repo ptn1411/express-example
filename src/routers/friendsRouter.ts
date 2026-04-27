@@ -4,21 +4,10 @@ import { checkApiAuthAccessToken } from "../middleware/checkAuth";
 import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { FriendRequest_Status } from "../types/Friends";
+import { SENSITIVE_USER_FIELDS, FriendStatus } from "../constants";
 import jsonP from "@ptndev/json";
 import { newFriend, newFriendAccepted } from "../services/new-notification";
 const router = Router();
-const arrayKeyRemove = [
-  "password",
-  "email",
-  "phone",
-  "firstName",
-  "lastName",
-  "birthday",
-  "sex",
-  "coverImage",
-  "createAt",
-  "updateAt",
-];
 router.get(
   "/status/:receiverId",
   checkApiAuthAccessToken,
@@ -72,10 +61,10 @@ router.get(
         code: 200,
         success: true,
         id: existingFriends.id,
-        creator: jsonP.removeKeyObject(existingFriends.creator, arrayKeyRemove),
+        creator: jsonP.removeKeyObject(existingFriends.creator, SENSITIVE_USER_FIELDS),
         receiver: jsonP.removeKeyObject(
           existingFriends.receiver,
-          arrayKeyRemove
+          SENSITIVE_USER_FIELDS
         ),
         status: existingFriends.status,
       });
@@ -158,7 +147,7 @@ router.post(
       const friendRequest = await Friends.create({
         creator: existingUser,
         receiver: checkFriend,
-        status: "pending",
+        status: FriendStatus.PENDING,
       });
       await AppDataSource.getRepository(Friends).save(friendRequest);
       await newFriend(existingUser, checkFriend);
@@ -167,8 +156,8 @@ router.post(
         success: true,
         message: `success`,
         id: friendRequest.id,
-        creator: jsonP.removeKeyObject(friendRequest.creator, arrayKeyRemove),
-        receiver: jsonP.removeKeyObject(friendRequest.receiver, arrayKeyRemove),
+        creator: jsonP.removeKeyObject(friendRequest.creator, SENSITIVE_USER_FIELDS),
+        receiver: jsonP.removeKeyObject(friendRequest.receiver, SENSITIVE_USER_FIELDS),
         status: friendRequest.status,
       });
     } catch (error) {
@@ -192,16 +181,6 @@ router.put(
 
     const status = req.body.status;
     try {
-      const existingFriends = await Friends.findOneBy({
-        id: parseInt(friendRequestId),
-      });
-      if (!existingFriends) {
-        return res.json({
-          code: 404,
-          success: false,
-          message: `error`,
-        });
-      }
       const existingFriendsWithUsers = await Friends.findOne({
         where: { id: parseInt(friendRequestId) },
         relations: ["creator", "receiver"],
@@ -223,8 +202,8 @@ router.put(
         message: `success`,
         id: existingFriendsWithUsers.id,
         status: existingFriendsWithUsers.status,
-        creator: jsonP.removeKeyObject(existingFriendsWithUsers.creator, arrayKeyRemove),
-        receiver: jsonP.removeKeyObject(existingFriendsWithUsers.receiver, arrayKeyRemove),
+        creator: jsonP.removeKeyObject(existingFriendsWithUsers.creator, SENSITIVE_USER_FIELDS),
+        receiver: jsonP.removeKeyObject(existingFriendsWithUsers.receiver, SENSITIVE_USER_FIELDS),
       });
     } catch (error) {
       return res.send({

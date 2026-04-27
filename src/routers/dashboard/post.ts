@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
+import { MoreThanOrEqual } from "typeorm";
 import { Post } from "../../entity/Post";
-// import { Like } from "typeorm";
 import { dateNow } from "../../utils";
 
 const router = Router();
@@ -20,7 +20,7 @@ router.get("/new", async (_req: Request, res: Response) => {
   const time = new Date(dateNow().date);
   const existingUser = await Post.findAndCount({
     where: {
-      createAt: time,
+      createAt: MoreThanOrEqual(time),
     },
     select: {
       uuid: true,

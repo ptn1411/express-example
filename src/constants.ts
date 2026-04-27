@@ -15,6 +15,19 @@ export const FriendStatus = {
   WAITING: "waiting-for-current-user-response",
 } as const;
 
+export const SENSITIVE_USER_FIELDS = [
+  "password",
+  "email",
+  "phone",
+  "firstName",
+  "lastName",
+  "birthday",
+  "sex",
+  "coverImage",
+  "createAt",
+  "updateAt",
+];
+
 export const ORIGIN = __prod__
   ? ([process.env.FRONTEND_URL, process.env.URL_APP].filter(Boolean) as string[])
   : [

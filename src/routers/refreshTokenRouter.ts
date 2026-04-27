@@ -11,8 +11,8 @@ const router = Router();
 router.post("/", async (req: Request, res: Response) => {
   const refreshToken = req.body.refreshToken;
 
-  if (!refreshToken)
-    return res.status(403).json({ message: "Refresh Token is required!" });
+  if (!refreshToken || typeof refreshToken !== "string")
+    return res.status(400).json({ message: "Refresh Token is required!" });
 
   try {
     const decodeUser = await JwtVerifyRefreshToken(refreshToken);

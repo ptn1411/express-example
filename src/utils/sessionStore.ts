@@ -85,11 +85,9 @@ class SessionStore extends Store {
     return callback(null);
   }
   touch(sid: string, session: SessionData, callback?: () => void): void {
-    this.db.create({
-      data: session,
-      sid,
+    this.set(sid, session, () => {
+      if (callback) callback();
     });
-    if (callback) callback();
   }
 }
 export default SessionStore;

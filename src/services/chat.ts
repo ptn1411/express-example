@@ -1,4 +1,4 @@
-import { KEY_PREFIX } from "../constants";
+import { KEY_PREFIX, SENSITIVE_USER_FIELDS } from "../constants";
 import { AppDataSource } from "../data-source";
 import { ActiveConversationEntity } from "../entity/Active-conversation";
 import { ConversationEntity } from "../entity/Conversation";
@@ -7,18 +7,6 @@ import { User } from "../entity/User";
 import redisClient from "../redis";
 import { removeKeyObject } from "../utils";
 import { listFriendOnline } from "./friend";
-const arrayKeyRemove = [
-  "password",
-  "email",
-  "phone",
-  "firstName",
-  "lastName",
-  "birthday",
-  "sex",
-  "coverImage",
-  "createAt",
-  "updateAt",
-];
 export let getConversation = async (creatorId: string, friendId: string) => {
   const existingConversation = await AppDataSource.getRepository(
     ConversationEntity
@@ -38,7 +26,7 @@ export let getConversation = async (creatorId: string, friendId: string) => {
   });
   if (existingUser && checkFriend && existingConversation) {
     existingConversation.users = [
-      removeKeyObject(existingUser, arrayKeyRemove) as User,
+      removeKeyObject(existingUser, SENSITIVE_USER_FIELDS) as User,
       removeKeyObject(checkFriend, arrayKeyRemove) as User,
     ];
     return existingConversation;
@@ -110,13 +98,13 @@ export let getUsersInConversation = async (conversationId: number) => {
   return existingConversation;
 };
 export let getConversationsWithUsers = async (userId: string) => {
-  const conversations = await getConversationsForUser(userId);
-
-  return Promise.all(
-    conversations.map(async (conversation) => {
-      return await getUsersInConversation(conversation.id);
-    })
-  );
+  return AppDataSource.getRepository(ConversationEntity)
+    .createQueryBuilder("conversation")
+    .leftJoin("conversation.users", "member")
+    .leftJoinAndSelect("conversation.users", "user")
+    .where("member.id = :userId", { userId })
+    .orderBy("conversation.lastUpdated", "DESC")
+    .getMany();
 };
 export let joinConversation = async (
   friendId: string,
@@ -148,28 +136,17 @@ export let joinConversation = async (
   }
   if (activeConversation) {
     await AppDataSource.getRepository(ActiveConversationEntity).delete({
-      user: {
-        id: userId,
-      },
+      user: { id: userId },
     });
-    const newActiveConversationEntity = await ActiveConversationEntity.create({
-      user: existingUser,
-      socketId,
-      conversationId,
-    });
-    return await AppDataSource.getRepository(ActiveConversationEntity).save(
-      newActiveConversationEntity
-    );
-  } else {
-    const newActiveConversationEntity = await ActiveConversationEntity.create({
-      user: existingUser,
-      socketId,
-      conversationId,
-    });
-    return await AppDataSource.getRepository(ActiveConversationEntity).save(
-      newActiveConversationEntity
-    );
   }
+  const newActiveConversationEntity = ActiveConversationEntity.create({
+    user: existingUser,
+    socketId,
+    conversationId,
+  });
+  return AppDataSource.getRepository(ActiveConversationEntity).save(
+    newActiveConversationEntity
+  );
 };
 export let leaveConversation = async (socketId: string) => {
   return await AppDataSource.getRepository(ActiveConversationEntity).delete({
