@@ -1,8 +1,10 @@
 import { KEY_PREFIX, SENSITIVE_USER_FIELDS } from "../constants";
+import { censorText } from "./offensiveWords";
 import { AppDataSource } from "../data-source";
 import { ActiveConversationEntity } from "../entity/Active-conversation";
 import { ConversationEntity } from "../entity/Conversation";
 import { MessageEntity } from "../entity/Message";
+import { MessageType } from "../types/Message";
 import { User } from "../entity/User";
 import redisClient from "../redis";
 import { removeKeyObject } from "../utils";
@@ -227,6 +229,9 @@ export let createMessage = async (message: MessageEntity) => {
     return null;
   }
   message.user = existingUser;
+  if (message.type === MessageType.TEXT || message.type === MessageType.URL) {
+    message.message = censorText(message.message);
+  }
   const existingMessage = await MessageEntity.create({
     ...message,
   });
