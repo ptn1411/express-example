@@ -140,6 +140,13 @@ export class User extends BaseEntity {
   })
   updateAt!: Date;
 
+  @Field({ nullable: true })
+  @Column({ type: "timestamp", nullable: true })
+  lastLoginAt?: Date;
+
+  @Column({ nullable: true })
+  lastLoginIp?: string;
+
   @DeleteDateColumn({ nullable: true })
   deletedAt?: Date;
 }

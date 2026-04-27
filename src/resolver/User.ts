@@ -32,6 +32,7 @@ import {
   JwtGenerateTokens,
   JwtSignAccessToken,
   JwtVerifyAccessToken,
+  JwtVerifyRefreshToken,
 } from "../utils/jwt";
 
 import { checkAccessToken } from "../middleware/checkAuth";
@@ -150,14 +151,11 @@ export class UserResolver {
 
       const dataUser = removeKeyObject(newUser, ["password"]);
 
-      const token = await JwtGenerateTokens({ user: dataUser });
-      if (token.error) {
-        return {
-          code: 500,
-          success: false,
-          message: `error token`,
-        };
+      const token = await JwtGenerateTokens({ user: dataUser }, { rememberMe: false });
+      if (token.error || !token.jti) {
+        return { code: 500, success: false, message: `error token` };
       }
+      await redisClient.set(`${KEY_PREFIX}rtoken:${newUser.id}:${token.jti}`, "1", "EX", DAY_TIME);
 
       return {
         code: 200,
@@ -178,55 +176,54 @@ export class UserResolver {
 
   @Mutation((_return) => UserMutationResponse)
   async login(
-    @Arg("loginInput") { usernameOrEmail, password }: LoginInput
+    @Arg("loginInput") { usernameOrEmail, password, rememberMe }: LoginInput,
+    @Ctx() { req }: Context
   ): Promise<UserMutationResponse> {
     try {
       const isEmail = validateEmail(usernameOrEmail);
 
       const existingUser = await User.findOne({
-        where: {
-          [isEmail ? "email" : "username"]: usernameOrEmail,
-        },
+        where: { [isEmail ? "email" : "username"]: usernameOrEmail },
       });
       if (!existingUser) {
         return {
           code: 400,
           success: false,
-          message: "User khong toi tai",
-          errors: [
-            {
-              field: "usernameOrEmail",
-              message: "username or email khong ton tai",
-            },
-          ],
+          message: "User không tồn tại",
+          errors: [{ field: "usernameOrEmail", message: "Username hoặc email không tồn tại" }],
         };
       }
 
-      const passwordValid = await argon2.verify(
-        existingUser.password,
-        password
-      );
+      const passwordValid = await argon2.verify(existingUser.password, password);
       if (!passwordValid) {
         return {
           code: 400,
           success: false,
-          message: "password sai",
-          errors: [{ field: "password", message: "password sai" }],
+          message: "Mật khẩu sai",
+          errors: [{ field: "password", message: "Mật khẩu không đúng" }],
         };
       }
+
+      // Track last login
+      const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.socket.remoteAddress ?? "";
+      existingUser.lastLoginAt = new Date();
+      existingUser.lastLoginIp = ip;
+      await existingUser.save();
 
       existingUser.email = hideEmailElement(existingUser.email).emailHide;
       existingUser.phone = hidePhoneElement(existingUser.phone).phoneHide;
-      let dataUser = removeKeyObject(existingUser, ["password"]);
+      const dataUser = removeKeyObject(existingUser, ["password"]);
 
-      const token = await JwtGenerateTokens({ user: dataUser });
-      if (token.error) {
-        return {
-          code: 500,
-          success: false,
-          message: `error token`,
-        };
+      const token = await JwtGenerateTokens({ user: dataUser }, { rememberMe: rememberMe ?? false });
+      if (token.error || !token.jti) {
+        return { code: 500, success: false, message: "Lỗi tạo token" };
       }
+
+      // Store jti in Redis so we can revoke it later
+      // TTL mirrors the refresh token expiry: 30 days or 1 day
+      const ttl = rememberMe ? DAY_TIME * 30 : DAY_TIME;
+      await redisClient.set(`${KEY_PREFIX}rtoken:${existingUser.id}:${token.jti}`, "1", "EX", ttl);
+
       return {
         code: 200,
         success: true,
@@ -235,22 +232,43 @@ export class UserResolver {
         refreshToken: token.refreshToken as string,
       };
     } catch (error) {
-      return {
-        code: 500,
-        success: false,
-        message: `server ${error}`,
-      };
+      return { code: 500, success: false, message: `server ${error}` };
     }
   }
   @Mutation((_return) => Boolean)
-  async logout(@Ctx() { req, res }: Context): Promise<boolean> {
-    return new Promise(async (resolve, _reject) => {
-      res.clearCookie(COOKIE_NAME);
-      res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
-      await redisClient.del(`${KEY_PREFIX}userid:${req.user?.id}`);
-      await redisClient.del(`${KEY_PREFIX}socketid:${req.user?.id}`);
-      resolve(true);
-    });
+  async logout(
+    @Arg("refreshToken") refreshToken: string,
+    @Ctx() { req, res }: Context
+  ): Promise<boolean> {
+    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+    const userId = req.user?.id;
+    if (userId) {
+      // Revoke this specific refresh token by deleting its jti from Redis
+      const decoded = await JwtVerifyRefreshToken(refreshToken);
+      if (decoded.data?.jti) {
+        await redisClient.del(`${KEY_PREFIX}rtoken:${userId}:${decoded.data.jti}`);
+      }
+      await redisClient.del(`${KEY_PREFIX}userid:${userId}`);
+      await redisClient.del(`${KEY_PREFIX}socketid:${userId}`);
+    }
+    return true;
+  }
+
+  @Mutation((_return) => Boolean)
+  @UseMiddleware(checkAccessToken)
+  async logoutAll(@Ctx() { req, res }: Context): Promise<boolean> {
+    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+    const userId = req.user?.id;
+    if (userId) {
+      // Delete all refresh tokens for this user from Redis
+      const keys = await redisClient.keys(`${KEY_PREFIX}rtoken:${userId}:*`);
+      if (keys.length > 0) await redisClient.del(...keys);
+      await redisClient.del(`${KEY_PREFIX}userid:${userId}`);
+      await redisClient.del(`${KEY_PREFIX}socketid:${userId}`);
+    }
+    return true;
   }
   @UseMiddleware(checkAccessToken)
   @Query((_return) => UserMutationResponse)
