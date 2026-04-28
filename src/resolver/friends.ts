@@ -6,7 +6,6 @@ import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { Friends } from "../entity/Friends";
 import { FriendQueryResponse } from "../types/FriendQueryResponse";
-import { log } from "console";
 import { checkAccessToken } from "../middleware/checkAuth";
 import { UserQueryResponse } from "../types/UserQueryResponse";
 import { In } from "typeorm";
@@ -50,7 +49,6 @@ export class FriendsResolver {
         users: existingUsers,
       };
     } catch (error) {
-      log(error);
       return {
         code: 500,
         success: false,
@@ -88,7 +86,6 @@ export class FriendsResolver {
         users: existingUsers,
       };
     } catch (error) {
-      log(error);
       return {
         code: 500,
         success: false,

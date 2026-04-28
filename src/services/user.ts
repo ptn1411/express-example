@@ -1,22 +1,11 @@
+import { ONLINE_WINDOW_MS } from "../constants";
 import { UserOnline } from "../entity/User-online";
 
 export let isOnlineUserById = async (userId: string) => {
   const existingUserOnline = await UserOnline.findOneBy({
-    user: {
-      id: userId,
-    },
+    user: { id: userId },
   });
-  if (existingUserOnline) {
-    const timeUpdateOnline = 300000;
-    const dateNow = new Date();
-    const dateOnline = new Date(existingUserOnline.updateAt);
-    const timeDiff = dateNow.getTime() - dateOnline.getTime();
-
-    if (timeDiff < timeUpdateOnline) {
-      return true;
-    }
-    return false;
-  } else {
-    return false;
-  }
+  if (!existingUserOnline) return false;
+  const timeDiff = Date.now() - new Date(existingUserOnline.updateAt).getTime();
+  return timeDiff < ONLINE_WINDOW_MS;
 };

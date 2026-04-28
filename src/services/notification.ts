@@ -2,7 +2,7 @@ import webPush from "web-push";
 import { Device } from "../entity/Device";
 
 webPush.setVapidDetails(
-  "mailto: ptndev18@gmail.com",
+  process.env.VAPID_EMAIL ?? "mailto:admin@localhost",
   process.env.WEB_PUSH_PUBLIC_KEY as string,
   process.env.WEB_PUSH_PRIVATE_KEY as string
 );
@@ -35,17 +35,16 @@ export let sendNotificationByUser = async (
       },
     });
     if (existingDevice) {
-      const payload = JSON.stringify({
-        title,
-        message: body,
-      });
-      const subscription: webPush.PushSubscription = JSON.parse(
-        existingDevice.subscription
-      );
-
-      await webPush.sendNotification(subscription, payload, {});
+      let subscription: webPush.PushSubscription;
+      try {
+        subscription = JSON.parse(existingDevice.subscription);
+      } catch {
+        return;
+      }
+      const payload = JSON.stringify({ title, message: body });
+      await webPush.sendNotification(subscription, payload);
     }
   } catch (error) {
-    console.log(error);
+    console.error("sendNotificationByUser failed:", error);
   }
 };

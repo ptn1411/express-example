@@ -96,16 +96,17 @@ export let newFriend = async (user: User, friend: User) => {
   await newUserNotion.save();
   eventEmitter.emit("notification", newUserNotion);
 };
-export let newFriendAccepted = async (user: User, friend: User) => {
+// receiver = người chấp nhận, creator = người gửi request (sẽ nhận thông báo)
+export let newFriendAccepted = async (receiver: User, creator: User) => {
   const newNotion = await Notifications.create({
-    senderID: user.id,
-    content: `${friend.fullName} Accepted`,
-    url: `${process.env.FRONTEND_URL}/${friend.username}`,
+    senderID: receiver.id,
+    content: `${receiver.fullName} accepted your friend request`,
+    url: `${process.env.FRONTEND_URL}/${receiver.username}`,
   });
   await newNotion.save();
   const newUserNotion = await UserNotifications.create({
     notification: newNotion,
-    user: friend,
+    user: creator,
     isRead: false,
   });
   await newUserNotion.save();

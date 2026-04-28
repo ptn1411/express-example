@@ -38,7 +38,7 @@ export class PostResolver {
         };
       }
       const uuid = uuidv4();
-      const newContent = await censorText(content);
+      const newContent = censorText(content);
       const newPost = await Post.create({
         content: newContent,
         images,
@@ -276,7 +276,7 @@ export class PostResolver {
         };
       }
 
-      existingPost.content = content;
+      existingPost.content = censorText(content);
       existingPost.images = images;
 
       await existingPost.save();

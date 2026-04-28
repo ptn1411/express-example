@@ -10,10 +10,12 @@ router.get(
   checkApiAuthAccessToken,
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
 
     const userNotificationsRepository =
       AppDataSource.getRepository(UserNotifications);
-    const notifications = await userNotificationsRepository.find({
+    const [notifications, totalCount] = await userNotificationsRepository.findAndCount({
       where: {
         user: {
           id: userId,
@@ -22,12 +24,19 @@ router.get(
       relations: {
         notification: true,
       },
+      order: { id: "DESC" },
+      take: limit,
+      skip: (page - 1) * limit,
     });
 
     return res.json({
       status: true,
       code: 200,
-      notifications: notifications,
+      notifications,
+      page,
+      limit,
+      totalCount,
+      hasNextPage: (page - 1) * limit + notifications.length < totalCount,
     });
   }
 );
@@ -46,8 +55,6 @@ router.post(
         id: Number(notionId),
       },
     });
-    console.log(notifications);
-
     if (!notifications) {
       return res.json({
         status: false,

@@ -37,10 +37,11 @@ function isEmptyObject(obj: { [key: string]: any }) {
 }
 
 function removeKeyObject(obj: { [key: string]: any }, exclude: string[]) {
+  const copy = { ...obj };
   for (const key of exclude) {
-    delete obj[key];
+    delete copy[key];
   }
-  return obj;
+  return copy;
 }
 
 function validateEmail(email: string) {
